@@ -1,0 +1,26 @@
+{
+	"name": "aero",
+	"version": "0.0.1",
+	"description": "CMS based on Node, Express, Jade and Stylus.",
+	"main": "index.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/blitzprog/aero.git"
+	},
+	"keywords": [
+		"website",
+		"cms",
+		"express",
+		"jade",
+		"stylus"
+	],
+	"author": "Eduard Urbach <e.urbach@gmail.com> (http://blitzprog.org)",
+	"license": "GPLv2",
+	"bugs": {
+		"url": "https://github.com/blitzprog/aero/issues"
+	},
+	"homepage": "https://github.com/blitzprog/aero"
+}
