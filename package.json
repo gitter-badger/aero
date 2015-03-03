@@ -1,5 +1,5 @@
 {
-	"name": "aero",
+	"name": "aero-cms",
 	"version": "0.0.1",
 	"description": "CMS based on Node, Express, Jade and Stylus.",
 	"main": "index.js",
