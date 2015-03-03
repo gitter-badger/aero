@@ -26,12 +26,13 @@ var aero = {
     js: "",
     css: "",
     compressor: UglifyJS.Compressor(),
+    rootPath: path.dirname(module.filename),
     
     root: function(fileName) {
         if(typeof fileName === "undefined")
-            return "./aero/";
+            return this.rootPath;
         
-        return path.join("./aero/", fileName);
+        return path.join(this.rootPath, fileName);
     },
     
     start: function(configFile) {
@@ -45,10 +46,10 @@ var aero = {
         this.loadScript(this.root("scripts/pages.js"));
         
         // Download latest version of Google Analytics
-        this.download("http://www.google-analytics.com/analytics.js", "aero/cache/scripts/analytics.js");
+        this.download("http://www.google-analytics.com/analytics.js", this.root("cache/scripts/analytics.js"));
         //this.download("http://www.google-analytics.com/plugins/ua/linkid.js", "aero/cache/scripts/linkid.js");
         
-        aero.loadScript("./aero/cache/scripts/analytics.js");
+        aero.loadScript(this.root("cache/scripts/analytics.js"));
         
         this.config.scripts.forEach(function(scriptName) {
             var scriptPath = path.join(aero.config.scriptsPath, scriptName + ".js");
@@ -116,7 +117,7 @@ var aero = {
         // Prepend reset
         fileObjects.unshift({
             name: "reset.styl",
-            fullPath: "aero/styles/reset.styl"
+            fullPath: this.root("styles/reset.styl")
         });
         
         this.css = fileObjects.filter(function(file) {
