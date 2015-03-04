@@ -156,7 +156,7 @@ var aero = {
         });
         
         aero.js.push(scripts.compressJS(aero.makePages()));
-        aero.js.push('$(document).ready(function(){aero.setTitle(\"\");$(window).trigger("resize");});');
+        aero.js.push('$(document).ready(function(){aero.setTitle(\"' + aero.config.siteName + '\");$(window).trigger("resize");});');
         
         var combinedJS = aero.js.join(";");
         var combinedCSS = aero.css.join(" ");
