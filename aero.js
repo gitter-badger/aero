@@ -20,6 +20,7 @@ var aero = {
         stylesPath: "./styles",
         scriptsPath: "./scripts",
         scripts: [],
+        styles: [],
         port: 80
     },
     js: [],
@@ -28,7 +29,8 @@ var aero = {
     
     start: function(configFile) {
         // Merge
-        this.config = objectAssign(this.config, JSON.parse(fs.readFileSync(configFile, "utf8")));
+        if(typeof configFile !== "undefined")
+            this.config = objectAssign(this.config, JSON.parse(fs.readFileSync(configFile, "utf8")));
         
         this.init();
         
@@ -43,7 +45,8 @@ var aero = {
         
         aero.loadScript(this.root("cache/scripts/analytics.js"));
         
-        this.loadUserData();
+        aero.loadUserData();
+        aero.startServer();
     },
     
     init: function() {
@@ -63,7 +66,16 @@ var aero = {
         
         // Favicon
         app.get("/favicon.ico", function(request, response) {
-            response.sendFile("favicon.ico", {root: "./"});
+            var favIconPath = "favicon.ico";
+            try {
+                fs.accessSync(favIconPath);
+            } catch(e) {
+                console.error("favicon.ico doesn't exist in your root directory, please add one!");
+                response.end();
+                return;
+            }
+            
+            response.sendFile(favIconPath, {root: "./"});
         });
 
         eventEmitter.on("newPage", function(pageName) {
@@ -99,7 +111,14 @@ var aero = {
     },
     
     loadPages: function(pagesPath) {
-        var files = fs.readdirSync(pagesPath);
+        var files;
+        
+        try {
+            files = fs.readdirSync(pagesPath);
+        } catch(e) {
+            console.warn("Directory " + pagesPath + " doesn't exist");
+            return;
+        }
         
         // Filter directories
         var pages = files.map(function(file) {
@@ -202,8 +221,6 @@ var aero = {
                 });
             });
         });
-        
-        aero.startServer();
     },
     
     makePages: function() {
