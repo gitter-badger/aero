@@ -43,7 +43,9 @@ var aero = {
         this.loadStyles(this.config.stylesPath);
         
         this.loadScript(this.root("cache/scripts/jquery.js"));
-        this.loadScript(this.root("scripts/pages.js"));
+        this.loadScript(this.root("scripts/helpers.js"));
+        this.loadScript(this.root("scripts/aero.js"));
+        this.loadScript(this.root("scripts/init.js"));
         
         // Download latest version of Google Analytics
         this.download("http://www.google-analytics.com/analytics.js", this.root("cache/scripts/analytics.js"));
@@ -157,8 +159,6 @@ var aero = {
         }).filter(function(file) {
             return fs.statSync(file.fullPath).isFile();
         }).map(function(file) {
-            console.log("Compiling script: " + path.basename(file.name, ".js"));
-            
             return aero.compressJSFile(file.fullPath);
         }).reduce(function(total, style) {
             return total + style;
@@ -166,6 +166,8 @@ var aero = {
     },
     
     loadScript: function(scriptPath) {
+        console.log("Compiling script: " + path.basename(scriptPath, ".js"));
+        
         this.js += this.compressJSFile(scriptPath);
     },
     
@@ -301,7 +303,7 @@ var aero = {
         Object.keys(aero.config.pages).forEach(function(key) {
             var page = aero.config.pages[key];
             
-            makePages.push('makePage("' + page.title + '", "' + key + '", "' + page.url + '");');
+            makePages.push('aero.makePage("' + page.title + '", "' + key + '", "' + page.url + '");');
         });
         
         return "$(document).ready(function(){" + makePages.join('') + "});";
