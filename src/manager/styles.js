@@ -20,7 +20,7 @@ var styles = {
     },
     
     compileStylusFile: function(filePath) {
-        this.compileStylus(fs.readFileSync(filePath, "utf8"));
+        return this.compileStylus(fs.readFileSync(filePath, "utf8"));
     },
 };
 
