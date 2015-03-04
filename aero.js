@@ -84,6 +84,9 @@ var aero = {
     },
     
     loadUserData: function() {
+        // CSS reset
+        aero.loadStyle(this.root("styles/reset.styl"));
+        
         // Styles
         this.config.styles.forEach(function(fileName) {
             aero.loadStyle(path.join(aero.config.stylesPath, fileName + ".styl"));
