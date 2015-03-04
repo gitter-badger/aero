@@ -4,7 +4,6 @@ CMS based on [Node](https://github.com/joyent/node), [Express](https://github.co
 * [Page Speed](https://developers.google.com/speed/pagespeed/insights/) rank of 100/100
 * Low latency (minimize HTTP requests)
 * Load full website only once (use AJAX updates with permalink/SEO support)
-* Made for developers
 
 Traditional CMS generate lots of HTTP requests, leading to very slow loading times in high latency environments like mobile networks. Even if you simply access a site in Amsterdam from Japan every single HTTP request that doesn't load parallely adds a lot of loading time to your website.
 

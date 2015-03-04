@@ -28,13 +28,6 @@ var aero = {
     compressor: UglifyJS.Compressor(),
     rootPath: path.dirname(module.filename),
     
-    root: function(fileName) {
-        if(typeof fileName === "undefined")
-            return this.rootPath;
-        
-        return path.join(this.rootPath, fileName);
-    },
-    
     start: function(configFile) {
         // Merge
         this.config = objectAssign(this.config, JSON.parse(fs.readFileSync(configFile, "utf8")));
@@ -52,15 +45,7 @@ var aero = {
         
         aero.loadScript(this.root("cache/scripts/analytics.js"));
         
-        this.config.styles.forEach(function(fileName) {
-            aero.loadStyle(path.join(aero.config.stylesPath, fileName + ".styl"));
-        });
-        
-        this.config.scripts.forEach(function(fileName) {
-            aero.loadScript(path.join(aero.config.scriptsPath, fileName + ".js"));
-        });
-        
-        this.loadPages(this.config.pagesPath);
+        this.loadUserData();
     },
     
     init: function() {
@@ -88,6 +73,21 @@ var aero = {
         });
     },
     
+    loadUserData: function() {
+        // Styles
+        this.config.styles.forEach(function(fileName) {
+            aero.loadStyle(path.join(aero.config.stylesPath, fileName + ".styl"));
+        });
+        
+        // Scripts
+        this.config.scripts.forEach(function(fileName) {
+            aero.loadScript(path.join(aero.config.scriptsPath, fileName + ".js"));
+        });
+        
+        // Pages
+        this.loadPages(this.config.pagesPath);
+    },
+    
     loadScript: function(filePath) {
         console.log("Compiling script: " + path.basename(filePath, ".js"));
         
@@ -97,21 +97,7 @@ var aero = {
     loadStyle: function(filePath) {
         console.log("Compiling style: " + path.basename(filePath, ".styl"));
         
-        var style = fs.readFileSync(filePath, "utf8");
-        var output = "";
-        
-        stylus(style)
-            .set("filename", filePath.replace(".styl", ".css"))
-            .set("compress", true)
-            .use(nib())
-            .render(function(error, css) {
-                if(error)
-                    throw error;
-                
-                output = css;
-            });
-        
-        this.css.push(output);
+        this.css.push(this.compileStylusFile(filePath));
     },
     
     loadPages: function(pagesPath) {
@@ -182,6 +168,7 @@ var aero = {
         });
         
         aero.js.push(this.compressJS(aero.makePages()));
+        aero.js.push('$(document).ready(function(){aero.setTitle(\"\");$(window).trigger("resize");});');
         
         var combinedJS = aero.js.join(";");
         var combinedCSS = aero.css.join(" ");
@@ -243,6 +230,24 @@ var aero = {
         return this.compressJS(data);
     },
     
+    compileStylusFile: function(filePath) {
+        var style = fs.readFileSync(filePath, "utf8");
+        var output = "";
+        
+        stylus(style)
+            .set("filename", filePath.replace(".styl", ".css"))
+            .set("compress", true)
+            .use(nib())
+            .render(function(error, css) {
+                if(error)
+                    throw error;
+                
+                output = css;
+            });
+            
+        return output;
+    },
+    
     makePages: function() {
         var makePages = [];
         
@@ -280,6 +285,13 @@ var aero = {
             if(typeof func != "undefined")
                 func();
         });
+    },
+    
+    root: function(fileName) {
+        if(typeof fileName === "undefined")
+            return this.rootPath;
+        
+        return path.join(this.rootPath, fileName);
     },
 };
 
