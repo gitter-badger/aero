@@ -1,14 +1,13 @@
 var fs = require("fs");
-var nib = require("nib");
 var http = require("http");
 var path = require("path");
 var jade = require("jade");
 var events = require("events");
-var stylus = require("stylus");
 var express = require("express");
-var UglifyJS = require("uglify-js");
 var compress = require("compression");
 var objectAssign = require("object-assign");
+var scripts = require("./src/manager/scripts");
+var styles = require("./src/manager/styles");
 
 // Init
 var app = express();
@@ -25,7 +24,6 @@ var aero = {
     },
     js: [],
     css: [],
-    compressor: UglifyJS.Compressor(),
     rootPath: path.dirname(module.filename),
     
     start: function(configFile) {
@@ -91,13 +89,13 @@ var aero = {
     loadScript: function(filePath) {
         console.log("Compiling script: " + path.basename(filePath, ".js"));
         
-        this.js.push(this.compressJSFile(filePath));
+        this.js.push(scripts.compressJSFile(filePath));
     },
     
     loadStyle: function(filePath) {
         console.log("Compiling style: " + path.basename(filePath, ".styl"));
         
-        this.css.push(this.compileStylusFile(filePath));
+        this.css.push(styles.compileStylusFile(filePath));
     },
     
     loadPages: function(pagesPath) {
@@ -147,18 +145,8 @@ var aero = {
                 //console.warn("Missing stylus file: " + stylFile);
             }
             
-            if(style != null) {
-                stylus(style)
-                    .set("filename", stylFile.replace(".styl", ".css"))
-                    .set("compress", true)
-                    .use(nib())
-                    .render(function(error, css) {
-                        if(error)
-                            throw error;
-                        
-                            page.css = css;
-                    });
-            }
+            if(style != null)
+                page.css = styles.compileStylus(style);
             
             if(typeof aero.config.pages == "undefined")
                 aero.config.pages = {};
@@ -167,7 +155,7 @@ var aero = {
             eventEmitter.emit("newPage", pageName);
         });
         
-        aero.js.push(this.compressJS(aero.makePages()));
+        aero.js.push(scripts.compressJS(aero.makePages()));
         aero.js.push('$(document).ready(function(){aero.setTitle(\"\");$(window).trigger("resize");});');
         
         var combinedJS = aero.js.join(";");
@@ -181,12 +169,11 @@ var aero = {
             console.log("Compiling page: " + page.title);
             
             var params = {
-                pageId: key,
-                page: page,
-                pages: aero.config.pages,
                 siteName: aero.config.siteName,
                 css: combinedCSS,
-                js: combinedJS
+                js: combinedJS,
+                pages: aero.config.pages,
+                page: page
             };
             
             // Render Jade file to HTML
@@ -217,35 +204,6 @@ var aero = {
         });
         
         aero.startServer();
-    },
-    
-    compressJS: function(code) {
-        var ast = UglifyJS.parse(code);
-        ast.figure_out_scope();
-        return ast.transform(this.compressor).print_to_string();
-    },
-    
-    compressJSFile: function(filePath) {
-        var data = fs.readFileSync(filePath, "utf8");
-        return this.compressJS(data);
-    },
-    
-    compileStylusFile: function(filePath) {
-        var style = fs.readFileSync(filePath, "utf8");
-        var output = "";
-        
-        stylus(style)
-            .set("filename", filePath.replace(".styl", ".css"))
-            .set("compress", true)
-            .use(nib())
-            .render(function(error, css) {
-                if(error)
-                    throw error;
-                
-                output = css;
-            });
-            
-        return output;
     },
     
     makePages: function() {
