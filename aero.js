@@ -8,22 +8,14 @@ var compress = require("compression");
 var objectAssign = require("object-assign");
 var scripts = require("./src/manager/scripts");
 var styles = require("./src/manager/styles");
+var pageConfig = require("./src/default/page-config.js");
 
 // Init
 var app = express();
 var eventEmitter = new events.EventEmitter();
 
 var aero = {
-    config: {
-        siteName: "Untitled",
-        pagesPath: "./pages",
-        stylesPath: "./styles",
-        scriptsPath: "./scripts",
-        scripts: [],
-        styles: [],
-        pages: [],
-        port: 80
-    },
+    config: require("./src/default/config"),
     js: [],
     css: [],
     rootPath: path.dirname(module.filename),
@@ -31,20 +23,23 @@ var aero = {
     start: function(configFile) {
         // Merge
         if(typeof configFile !== "undefined")
-            this.config = objectAssign(this.config, JSON.parse(fs.readFileSync(configFile, "utf8")));
+            aero.config = objectAssign(this.config, JSON.parse(fs.readFileSync(configFile, "utf8")));
         
-        this.init();
+        aero.init();
         
-        this.loadScript(this.root("cache/scripts/jquery.js"));
-        this.loadScript(this.root("scripts/helpers.js"));
-        this.loadScript(this.root("scripts/aero.js"));
-        this.loadScript(this.root("scripts/init.js"));
+        // jQuery is compressed already
+        aero.loadScriptWithoutCompression(this.root("cache/scripts/jquery.js"));
+        
+        // Compress these
+        aero.loadScript(this.root("scripts/helpers.js"));
+        aero.loadScript(this.root("scripts/aero.js"));
+        aero.loadScript(this.root("scripts/init.js"));
         
         // Download latest version of Google Analytics
-        this.download("http://www.google-analytics.com/analytics.js", this.root("cache/scripts/analytics.js"));
+        aero.download("http://www.google-analytics.com/analytics.js", this.root("cache/scripts/analytics.js"));
         //this.download("http://www.google-analytics.com/plugins/ua/linkid.js", "aero/cache/scripts/linkid.js");
         
-        aero.loadScript(this.root("cache/scripts/analytics.js"));
+        aero.loadScriptWithoutCompression(this.root("cache/scripts/analytics.js"));
         
         if(!aero.loadUserData()) {
             aero.loadAdminInterface();
@@ -70,6 +65,7 @@ var aero = {
         // Favicon
         app.get("/favicon.ico", function(request, response) {
             var favIconPath = "favicon.ico";
+            
             try {
                 fs.accessSync(favIconPath);
             } catch(e) {
@@ -101,13 +97,19 @@ var aero = {
         });
         
         // Pages
-        this.loadPages(this.config.pagesPath);
+        return this.loadPages(this.config.pagesPath);
     },
     
     loadScript: function(filePath) {
         console.log("Compiling script: " + path.basename(filePath, ".js"));
         
         this.js.push(scripts.compressJSFile(filePath));
+    },
+    
+    loadScriptWithoutCompression: function(filePath) {
+        console.log("Loading script: " + path.basename(filePath, ".js"));
+        
+        this.js.push(fs.readFileSync(filePath, "utf8"));
     },
     
     loadStyle: function(filePath) {
@@ -123,7 +125,7 @@ var aero = {
             files = fs.readdirSync(pagesPath);
         } catch(e) {
             console.warn("Directory " + pagesPath + " doesn't exist");
-            return;
+            return false;
         }
         
         // Filter directories
@@ -135,6 +137,9 @@ var aero = {
         }).filter(function(file) {
             return fs.statSync(file.fullPath).isDirectory();
         });
+        
+        // Set views directory
+        app.set("views", pagesPath);
         
         // Find all pages
         pages.forEach(function(file) {
@@ -151,11 +156,7 @@ var aero = {
                 //console.warn("Missing page information file: " + jsonFile);
             }
             
-            var page = {
-                title: pageName.capitalize(),
-                url: pageName,
-                visible: true
-            };
+            var page = pageConfig(pageName);
             
             // Merge
             if(jsonString != null)
@@ -186,8 +187,6 @@ var aero = {
         var combinedJS = aero.js.join(";");
         var combinedCSS = aero.css.join(" ");
         
-        app.set("views", pagesPath);
-        
         // Compile jade files
         pages.forEach(function(file) {
             var key = file.name;
@@ -199,7 +198,7 @@ var aero = {
                 siteName: aero.config.siteName,
                 css: combinedCSS,
                 js: combinedJS,
-                pages: aero.config.pages,
+                pages: pages,
                 page: page
             };
             
@@ -229,6 +228,8 @@ var aero = {
                 });
             });
         });
+        
+        return true;
     },
     
     loadAdminInterface: function() {
@@ -252,7 +253,7 @@ var aero = {
         // Start server
         app.listen(aero.config.port);
         
-        console.log("Server started on port " + aero.config.port + ".");
+        console.log(aero.config.siteName + " started on port " + aero.config.port + ".");
     },
     
     createDirectory: function(dirPath) {
