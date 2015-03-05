@@ -147,11 +147,11 @@ var aero = {
             var jsonFile = path.join(file.fullPath, pageName + ".json");
             var stylFile = path.join(file.fullPath, pageName + ".styl");
             
-            var jsonString = null;
+            var pageJSON = null;
             
             // JSON
             try {
-                jsonString = fs.readFileSync(jsonFile, "utf8");
+                pageJSON = fs.readFileSync(jsonFile, "utf8");
             } catch(error) {
                 //console.warn("Missing page information file: " + jsonFile);
             }
@@ -159,8 +159,8 @@ var aero = {
             var page = pageConfig(pageName);
             
             // Merge
-            if(jsonString != null)
-                page = objectAssign(page, JSON.parse(jsonString));
+            if(pageJSON != null)
+                page = objectAssign(page, JSON.parse(pageJSON));
             
             var style = null;
             
@@ -173,9 +173,6 @@ var aero = {
             
             if(style != null)
                 page.css = styles.compileStylus(style);
-            
-            if(typeof aero.config.pages == "undefined")
-                aero.config.pages = {};
             
             aero.config.pages[pageName] = page;
             eventEmitter.emit("newPage", pageName);
@@ -198,7 +195,7 @@ var aero = {
                 siteName: aero.config.siteName,
                 css: combinedCSS,
                 js: combinedJS,
-                pages: pages,
+                pages: aero.config.pages,
                 page: page
             };
             
@@ -218,7 +215,7 @@ var aero = {
                 // Render Jade file to HTML
                 app.render("layout", params, function(error, html) {
                     if(error)
-                        console.log(error);
+                        throw error;
                     
                     // Set up response with cached output
                     app.get("/" + page.url, function(request, response) {
@@ -233,6 +230,8 @@ var aero = {
     },
     
     loadAdminInterface: function() {
+        console.log("Loading admin interface");
+        
         aero.loadPages(this.root("./pages"));
     },
     
@@ -281,10 +280,6 @@ var aero = {
         
         return path.join(this.rootPath, fileName);
     },
-};
-
-String.prototype.capitalize = function() {
-    return this.charAt(0).toUpperCase() + this.slice(1);
 };
 
 module.exports = aero;

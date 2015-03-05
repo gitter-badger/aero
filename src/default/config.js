@@ -5,6 +5,6 @@ module.exports = {
     scriptsPath: "./scripts",
     scripts: [],
     styles: [],
-    pages: [],
+    pages: {},
     port: 80
 };
