@@ -26,4 +26,4 @@ Run it using
 
     node index.js
 
-This project is in very early alpha stage and lacks documentation. The format of the configuration file is not documented yet. If you feel hardcore and want to reverse-engineer some stuff, feel free to look at the [source code of my aero based website](https://github.com/blitzprog/blitzprog.org).
+__This project is in very early alpha stage__ and doesn't have any documentation (it's pretty much a WFM / Works For Myself at the moment). If you feel hardcore and want to reverse-engineer some stuff, feel free to look at the [source code of my aero based website](https://github.com/blitzprog/blitzprog.org).

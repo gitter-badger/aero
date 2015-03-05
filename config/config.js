@@ -6,5 +6,10 @@ module.exports = {
     scripts: [],
     styles: [],
     pages: {},
-    port: 80
+    port: 80,
+    browser: {
+        cache: {
+            duration: 30 * 24 * 60 * 60 * 1000
+        }
+    }
 };

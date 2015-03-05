@@ -2,26 +2,34 @@ var fs = require("fs");
 var http = require("http");
 var path = require("path");
 var jade = require("jade");
-var events = require("events");
 var express = require("express");
 var compress = require("compression");
 var objectAssign = require("object-assign");
 var scripts = require("./src/manager/scripts");
 var styles = require("./src/manager/styles");
-var pageConfig = require("./src/default/page-config.js");
-
-// Init
-var app = express();
-var eventEmitter = new events.EventEmitter();
+var pageConfig = require("./config/page");
 
 var aero = {
-    config: require("./src/default/config"),
+    // Express app
+    app: express(),
+    
+    // Aero configuration
+    config: require("./config/config"),
+    
+    // An array of strings containing all the JavaScript code for the site
     js: [],
+    
+    // An array of strings containing all the CSS for the site
     css: [],
+    
+    // Aero root folder
     rootPath: path.dirname(module.filename),
     
+    // Aero event manager
+    events: new (require("events")).EventEmitter(),
+    
     start: function(configFile) {
-        // Merge
+        // Merge config file
         if(typeof configFile !== "undefined")
             aero.config = objectAssign(this.config, JSON.parse(fs.readFileSync(configFile, "utf8")));
         
@@ -49,21 +57,23 @@ var aero = {
     },
     
     init: function() {
-        var options = {
-            maxAge: 30 * 24 * 60 * 60 * 1000
+        var staticFilesConfig = {
+            maxAge: aero.config.browser.cache.duration
         };
         
         // Set up jade
-        app.set("view engine", "jade");
-        app.locals.basedir = path.join(__dirname, "pages");
-
+        aero.app.set("view engine", "jade");
+        aero.app.locals.basedir = path.join(__dirname, "pages");
+        
+        // Gzip
+        aero.app.use(compress());
+        
         // Static files
-        app.use(compress());
-        app.use("/js", express.static("./js", options));
-        app.use("/images", express.static("./images", options));
+        aero.app.use("/js", express.static("./js", staticFilesConfig));
+        aero.app.use("/images", express.static("./images", staticFilesConfig));
         
         // Favicon
-        app.get("/favicon.ico", function(request, response) {
+        aero.app.get("/favicon.ico", function(request, response) {
             var favIconPath = "favicon.ico";
             
             try {
@@ -77,7 +87,7 @@ var aero = {
             response.sendFile(favIconPath, {root: "./"});
         });
 
-        eventEmitter.on("newPage", function(pageName) {
+        aero.events.on("newPage", function(pageName) {
             console.log("Installing page: " + pageName);
         });
     },
@@ -139,7 +149,7 @@ var aero = {
         });
         
         // Set views directory
-        app.set("views", pagesPath);
+        aero.app.set("views", pagesPath);
         
         // Find all pages
         pages.forEach(function(file) {
@@ -175,7 +185,7 @@ var aero = {
                 page.css = styles.compileStylus(style);
             
             aero.config.pages[pageName] = page;
-            eventEmitter.emit("newPage", pageName);
+            aero.events.emit("newPage", pageName);
         });
         
         aero.js.push(scripts.compressJS(aero.makePages()));
@@ -200,25 +210,25 @@ var aero = {
             };
             
             // Render Jade file to HTML
-            app.render(key + "/" + key, params, function(error, html) {
+            aero.app.render(key + "/" + key, params, function(error, html) {
                 if(error)
                     throw error;
                 
                 params.content = html;
                 
                 // Set up response with cached output
-                app.get("/raw/" + page.url, function(request, response) {
+                aero.app.get("/raw/" + page.url, function(request, response) {
                     response.header("Content-Type", "text/html; charset=utf-8");
                     response.end(html);
                 });
                 
                 // Render Jade file to HTML
-                app.render("layout", params, function(error, html) {
+                aero.app.render("layout", params, function(error, html) {
                     if(error)
                         throw error;
                     
                     // Set up response with cached output
-                    app.get("/" + page.url, function(request, response) {
+                    aero.app.get("/" + page.url, function(request, response) {
                         response.header("Content-Type", "text/html; charset=utf-8");
                         response.end(html);
                     });
@@ -250,7 +260,7 @@ var aero = {
     // Start server
     startServer: function() {
         // Start server
-        app.listen(aero.config.port);
+        aero.app.listen(aero.config.port);
         
         console.log(aero.config.siteName + " started on port " + aero.config.port + ".");
     },
