@@ -21,6 +21,7 @@ var aero = {
         scriptsPath: "./scripts",
         scripts: [],
         styles: [],
+        pages: [],
         port: 80
     },
     js: [],
@@ -45,7 +46,10 @@ var aero = {
         
         aero.loadScript(this.root("cache/scripts/analytics.js"));
         
-        aero.loadUserData();
+        if(!aero.loadUserData()) {
+            aero.loadAdminInterface();
+        }
+        
         aero.startServer();
     },
     
@@ -55,7 +59,6 @@ var aero = {
         };
         
         // Set up jade
-        app.set("views", aero.config.pagesPath);
         app.set("view engine", "jade");
         app.locals.basedir = path.join(__dirname, "pages");
 
@@ -183,6 +186,8 @@ var aero = {
         var combinedJS = aero.js.join(";");
         var combinedCSS = aero.css.join(" ");
         
+        app.set("views", pagesPath);
+        
         // Compile jade files
         pages.forEach(function(file) {
             var key = file.name;
@@ -224,6 +229,10 @@ var aero = {
                 });
             });
         });
+    },
+    
+    loadAdminInterface: function() {
+        aero.loadPages(this.root("./pages"));
     },
     
     makePages: function() {
