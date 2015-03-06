@@ -3,6 +3,7 @@ module.exports = {
     pagesPath: "./pages",
     stylesPath: "./styles",
     scriptsPath: "./scripts",
+    layoutPath: "./layout.jade",
     scripts: [],
     styles: [],
     static: [],

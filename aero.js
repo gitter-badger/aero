@@ -145,9 +145,6 @@ var aero = {
             return fs.statSync(file.fullPath).isDirectory();
         });
         
-        // Set views directory
-        aero.app.set("views", pagesPath);
-        
         // Find all pages
         pages.forEach(function(file) {
             var pageName = file.name;
@@ -188,14 +185,12 @@ var aero = {
         aero.js.push(scripts.compressJS(aero.makePages()));
         aero.js.push('$(document).ready(function(){aero.setTitle(\"' + aero.config.siteName + '\");$(window).trigger("resize");});');
         
-        var combinedJS = aero.js.join(";");
-        var combinedCSS = aero.css.join(" ");
-        var renderLayout = jade.compileFile("index.jade");
+        var renderLayout = jade.compileFile(aero.config.layoutPath);
         
         var params = {
             siteName: aero.config.siteName,
-            css: combinedCSS,
-            js: combinedJS,
+            css: aero.css.join(" "),
+            js: aero.js.join(";"),
             pages: aero.config.pages
         };
         
@@ -208,23 +203,28 @@ var aero = {
             
             var renderPage = jade.compileFile(path.join(aero.config.pagesPath, key + "/" + key + ".jade"));
             
-            // Set page-specific parameters
+            // We MUST save this in a local variable
+            var html = renderPage(params);
+            
+            // Parameter: page
             params.page = page;
-            params.content = renderPage(params);
             
             // Set up raw response with cached output
             aero.app.get("/raw/" + page.url, function(request, response) {
                 response.header("Content-Type", "text/html; charset=utf-8");
-                response.end(params.content);
+                response.end(html);
             });
             
+            // Parameter: content
+            params.content = html;
+            
             // Render Jade file to HTML
-            var html = renderLayout(params);
+            var layout = renderLayout(params);
             
             // Set up full response with cached output
             aero.app.get("/" + page.url, function(request, response) {
                 response.header("Content-Type", "text/html; charset=utf-8");
-                response.end(html);
+                response.end(layout);
             });
         });
         
