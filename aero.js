@@ -240,9 +240,14 @@ var aero = {
     },
     
     loadAdminInterface: function() {
-        console.log("Loading admin interface");
+        /*console.log("Loading admin interface");
         
         aero.loadPages(this.root("./pages"));
+        
+        aero.app.get("/", function(request, response) {
+            response.writeHead(302, {'Location': '/admin'});
+            response.end();
+        });*/
     },
     
     makePages: function() {
