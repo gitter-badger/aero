@@ -175,8 +175,10 @@ var aero = {
                 //console.warn("Missing stylus file: " + stylFile);
             }
             
-            if(style != null)
+            if(style != null) {
+                console.log(" - Compiling page style: " + stylFile);
                 page.css = styles.compileStylus(style);
+            }
             
             aero.config.pages[pageName] = page;
             aero.events.emit("newPage", pageName);
@@ -203,11 +205,11 @@ var aero = {
             
             var renderPage = jade.compileFile(path.join(aero.config.pagesPath, key + "/" + key + ".jade"));
             
-            // We MUST save this in a local variable
-            var html = renderPage(params);
-            
             // Parameter: page
             params.page = page;
+            
+            // We MUST save this in a local variable
+            var html = renderPage(params);
             
             // Set up raw response with cached output
             aero.app.get("/raw/" + page.url, function(request, response) {
