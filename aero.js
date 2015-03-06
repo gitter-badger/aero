@@ -45,7 +45,10 @@ var aero = {
         
         // Download latest version of Google Analytics
         aero.download("http://www.google-analytics.com/analytics.js", this.root("cache/scripts/analytics.js"));
-        //this.download("http://www.google-analytics.com/plugins/ua/linkid.js", "aero/cache/scripts/linkid.js");
+        //aero.download("http://www.google-analytics.com/plugins/ua/linkid.js", "aero/cache/scripts/linkid.js");
+        
+        if(aero.config.fonts.length > 0)
+            aero.download("http://fonts.googleapis.com/css?family=" + aero.config.fonts.join("|"), this.root("cache/styles/google-fonts.css"))
         
         aero.loadScriptWithoutCompression(this.root("cache/scripts/analytics.js"));
         
@@ -92,6 +95,9 @@ var aero = {
     loadUserData: function() {
         // CSS reset
         aero.loadStyle(this.root("styles/reset.styl"));
+        
+        if(aero.config.fonts.length > 0)
+            aero.loadStyle(this.root("cache/styles/google-fonts.css"));
         
         // Styles
         this.config.styles.forEach(function(fileName) {
@@ -209,7 +215,7 @@ var aero = {
             params.page = page;
             
             // We MUST save this in a local variable
-            var html = renderPage(params);
+            var html = styles.scoped(page.css) + renderPage(params);
             
             // Set up raw response with cached output
             aero.app.get("/raw/" + page.url, function(request, response) {

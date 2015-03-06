@@ -22,6 +22,10 @@ var styles = {
     compileStylusFile: function(filePath) {
         return this.compileStylus(fs.readFileSync(filePath, "utf8"));
     },
+    
+    scoped: function(css) {
+        return "<style scoped>" + css + "</style>";
+    }
 };
 
 module.exports = styles;

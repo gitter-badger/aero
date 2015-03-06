@@ -7,6 +7,7 @@ module.exports = {
     scripts: [],
     styles: [],
     static: [],
+    fonts: [],
     pages: {},
     port: 80,
     browser: {
