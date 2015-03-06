@@ -8,7 +8,7 @@ module.exports = {
     styles: [],
     static: [],
     fonts: [],
-    pages: {},
+    pages: [],
     port: 80,
     browser: {
         cache: {

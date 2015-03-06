@@ -16,11 +16,17 @@ var aero = {
     // Aero configuration
     config: require("./config/config"),
     
+    // Includes all page objects
+    pages: {},
+    
     // An array of strings containing all the JavaScript code for the site
     js: [],
     
     // An array of strings containing all the CSS for the site
     css: [],
+    
+    // Components
+    watch: require("node-watch"),
     
     // Aero root folder
     rootPath: path.dirname(module.filename),
@@ -135,23 +141,12 @@ var aero = {
     },
     
     loadPages: function(pagesPath) {
-        var files;
-        
-        try {
-            files = fs.readdirSync(pagesPath);
-        } catch(e) {
-            console.warn("Directory " + pagesPath + " doesn't exist");
-            return false;
-        }
-        
         // Filter directories
-        var pages = files.map(function(file) {
+        var pages = aero.config.pages.map(function(file) {
             return {
                 name: file,
                 fullPath: path.join(pagesPath, file)
             };
-        }).filter(function(file) {
-            return fs.statSync(file.fullPath).isDirectory();
         });
         
         // Find all pages
@@ -189,7 +184,7 @@ var aero = {
                 page.css = styles.compileStylus(style);
             }
             
-            aero.config.pages[pageName] = page;
+            aero.pages[pageName] = page;
             aero.events.emit("newPage", pageName);
         });
         
@@ -202,23 +197,36 @@ var aero = {
             siteName: aero.config.siteName,
             css: aero.css.join(" "),
             js: aero.js.join(";"),
-            pages: aero.config.pages
+            pages: aero.pages
         };
         
         // Compile jade files
         pages.forEach(function(file) {
             var key = file.name;
-            var page = aero.config.pages[key];
+            var page = aero.pages[key];
+            var pagePath = path.join(aero.config.pagesPath, key);
+            var html = "";
+            var layout = "";
             
-            console.log("Compiling page: " + page.title);
+            page.compile = function() {
+                console.log("Compiling page: " + this.title);
+                
+                var renderPage = jade.compileFile(path.join(pagePath, key + ".jade"));
+                
+                // Parameter: page
+                params.page = this;
+                
+                // We MUST save this in a local variable
+                html = styles.scoped(this.css) + renderPage(params);
+                
+                // Parameter: content
+                params.content = html;
+                
+                // Render Jade file to HTML
+                layout = renderLayout(params);
+            };
             
-            var renderPage = jade.compileFile(path.join(aero.config.pagesPath, key + "/" + key + ".jade"));
-            
-            // Parameter: page
-            params.page = page;
-            
-            // We MUST save this in a local variable
-            var html = styles.scoped(page.css) + renderPage(params);
+            page.compile();
             
             // Set up raw response with cached output
             aero.app.get("/raw/" + page.url, function(request, response) {
@@ -226,16 +234,20 @@ var aero = {
                 response.end(html);
             });
             
-            // Parameter: content
-            params.content = html;
-            
-            // Render Jade file to HTML
-            var layout = renderLayout(params);
-            
             // Set up full response with cached output
             aero.app.get("/" + page.url, function(request, response) {
                 response.header("Content-Type", "text/html; charset=utf-8");
                 response.end(layout);
+            });
+            
+            // Watch directory
+            aero.watch(pagePath, function(filePath) {
+                try {
+                    console.log("File changed:", filePath);
+                    page.compile();
+                } catch(e) {
+                    console.error(e);
+                }
             });
         });
         
@@ -256,8 +268,8 @@ var aero = {
     makePages: function() {
         var makePages = [];
         
-        Object.keys(aero.config.pages).forEach(function(key) {
-            var page = aero.config.pages[key];
+        Object.keys(aero.pages).forEach(function(key) {
+            var page = aero.pages[key];
             
             makePages.push('aero.makePage("' + page.title + '", "' + key + '", "' + page.url + '");');
         });
