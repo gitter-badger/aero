@@ -5,6 +5,7 @@ module.exports = {
     scriptsPath: "./scripts",
     scripts: [],
     styles: [],
+    static: [],
     pages: {},
     port: 80,
     browser: {
