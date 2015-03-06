@@ -12,7 +12,7 @@ $(window).bind('popstate', function(e) {
 	if(e.originalEvent.state) {
 		aero.stateObj = e.originalEvent.state;
 		aero.loadURL(aero.stateObj.publicURL);
-	} else if(stateObj.publicURL != aero.originalPath) {
+	} else if(aero.stateObj.publicURL != aero.originalPath) {
 		aero.loadURL(aero.originalPath);
 	}
 	
