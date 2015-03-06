@@ -21,9 +21,20 @@ And start it with a configuration file:
 
     aero.start("config.json");
 
-That's all you need for your index.js file.
-Run it using
+That's all you need for your index.js file. Create a configuration file (TODO: document this step) and run it using
 
     node index.js
 
 __This project is in very early alpha stage__ and doesn't have any documentation (it's pretty much a WFM / Works For Myself at the moment). If you feel hardcore and want to reverse-engineer some stuff, feel free to look at the [source code of my aero based website](https://github.com/blitzprog/blitzprog.org).
+
+## Design Decisions
+* Static pages are served directly from memory so there is no FS lookup on a GET request.
+* Pages and their contents are stored in the file system instead of a database: This allows us to use git for the page contents. Web developers can use their favourite text editor (e.g. Atom or Sublime). If your website or app is served from multiple servers all you need to do is call _git pull_ when a change happens. SFTP works as well if you prefer a faster workflow using a single server.
+
+## Crash Course
+* A page is the most basic element of Aero, e.g. __/__ is the front page and __/blog__ is a different page.
+* Every Aero based website needs a
+    * config file (in JSON format)
+    * directory for pages
+    * one sub-directory per page that contains at least a .jade file with the same name
+* TODO: Lots of documentation missing, work in progress...
