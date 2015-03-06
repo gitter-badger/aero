@@ -31,27 +31,30 @@ var aero = {
     start: function(configFile) {
         // Merge config file
         if(typeof configFile !== "undefined")
-            aero.config = objectAssign(this.config, JSON.parse(fs.readFileSync(configFile, "utf8")));
+            aero.config = objectAssign(aero.config, JSON.parse(fs.readFileSync(configFile, "utf8")));
         
         aero.init();
         
         // jQuery is compressed already
-        aero.loadScriptWithoutCompression(this.root("cache/scripts/jquery.js"));
+        aero.loadScriptWithoutCompression(aero.root("cache/scripts/jquery.js"));
         
         // Compress these
-        aero.loadScript(this.root("scripts/helpers.js"));
-        aero.loadScript(this.root("scripts/aero.js"));
-        aero.loadScript(this.root("scripts/init.js"));
+        aero.loadScript(aero.root("scripts/helpers.js"));
+        aero.loadScript(aero.root("scripts/aero.js"));
+        aero.loadScript(aero.root("scripts/init.js"));
         
         // Download latest version of Google Analytics
-        aero.download("http://www.google-analytics.com/analytics.js", this.root("cache/scripts/analytics.js"));
-        //aero.download("http://www.google-analytics.com/plugins/ua/linkid.js", "aero/cache/scripts/linkid.js");
-        
-        if(aero.config.fonts.length > 0)
-            aero.download("http://fonts.googleapis.com/css?family=" + aero.config.fonts.join("|"), this.root("cache/styles/google-fonts.css"))
-        
-        aero.loadScriptWithoutCompression(this.root("cache/scripts/analytics.js"));
-        
+        aero.download("http://www.google-analytics.com/analytics.js", aero.root("cache/scripts/analytics.js"), function() {
+            aero.loadScriptWithoutCompression(aero.root("cache/scripts/analytics.js"));
+            
+            if(aero.config.fonts.length > 0)
+                aero.download("http://fonts.googleapis.com/css?family=" + aero.config.fonts.join("|"), aero.root("cache/styles/google-fonts.css"), aero.loadAndStart)
+            else
+                aero.loadAndStart();
+        });
+    },
+    
+    loadAndStart: function() {
         if(!aero.loadUserData()) {
             aero.loadAdminInterface();
         }
@@ -94,41 +97,41 @@ var aero = {
     
     loadUserData: function() {
         // CSS reset
-        aero.loadStyle(this.root("styles/reset.styl"));
+        aero.loadStyle(aero.root("styles/reset.styl"));
         
         if(aero.config.fonts.length > 0)
-            aero.loadStyle(this.root("cache/styles/google-fonts.css"));
+            aero.loadStyle(aero.root("cache/styles/google-fonts.css"));
         
         // Styles
-        this.config.styles.forEach(function(fileName) {
+        aero.config.styles.forEach(function(fileName) {
             aero.loadStyle(path.join(aero.config.stylesPath, fileName + ".styl"));
         });
         
         // Scripts
-        this.config.scripts.forEach(function(fileName) {
+        aero.config.scripts.forEach(function(fileName) {
             aero.loadScript(path.join(aero.config.scriptsPath, fileName + ".js"));
         });
         
         // Pages
-        return this.loadPages(this.config.pagesPath);
+        return aero.loadPages(aero.config.pagesPath);
     },
     
     loadScript: function(filePath) {
         console.log("Compiling script: " + path.basename(filePath, ".js"));
         
-        this.js.push(scripts.compressJSFile(filePath));
+        aero.js.push(scripts.compressJSFile(filePath));
     },
     
     loadScriptWithoutCompression: function(filePath) {
         console.log("Loading script: " + path.basename(filePath, ".js"));
         
-        this.js.push(fs.readFileSync(filePath, "utf8"));
+        aero.js.push(fs.readFileSync(filePath, "utf8"));
     },
     
     loadStyle: function(filePath) {
         console.log("Compiling style: " + path.basename(filePath, ".styl"));
         
-        this.css.push(styles.compileStylusFile(filePath));
+        aero.css.push(styles.compileStylusFile(filePath));
     },
     
     loadPages: function(pagesPath) {
@@ -242,7 +245,7 @@ var aero = {
     loadAdminInterface: function() {
         /*console.log("Loading admin interface");
         
-        aero.loadPages(this.root("./pages"));
+        aero.loadPages(aero.root("./pages"));
         
         aero.app.get("/", function(request, response) {
             response.writeHead(302, {'Location': '/admin'});
@@ -279,21 +282,22 @@ var aero = {
         }
     },
     
-    download: function(from, to, func) {
+    download: function(from, to, callBack) {
         return http.get(from, function(response) {
             var file = fs.createWriteStream(to);
             response.pipe(file);
             
-            if(typeof func != "undefined")
-                func();
+            file.on("finish", function() {
+                file.close(callBack);
+            });
         });
     },
     
     root: function(fileName) {
         if(typeof fileName === "undefined")
-            return this.rootPath;
+            return aero.rootPath;
         
-        return path.join(this.rootPath, fileName);
+        return path.join(aero.rootPath, fileName);
     },
 };
 
