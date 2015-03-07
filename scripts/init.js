@@ -23,6 +23,6 @@ $(window).bind('popstate', function(e) {
 $(window).load(function() {
 	if(aero.originalPath in aero.publicURLToPage) {
 		var page = aero.publicURLToPage[aero.originalPath];
-        aero.pageHandler(page.id);
+		aero.pageHandler(page.id);
 	}
 });

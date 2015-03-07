@@ -4,15 +4,15 @@
 	"description": "CMS based on Node, Express, Jade and Stylus.",
 	"main": "aero.js",
 	"dependencies": {
-        "express": "*",
-        "jade": "*",
-        "stylus": "*",
-        "nib": "*",
-        "object-assign": "*",
-        "compression": "*",
-        "uglify-js": "*",
+		"express": "*",
+		"jade": "*",
+		"stylus": "*",
+		"nib": "*",
+		"object-assign": "*",
+		"compression": "*",
+		"uglify-js": "*",
 		"node-watch": "*"
-    },
+	},
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
