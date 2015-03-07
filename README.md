@@ -11,11 +11,11 @@ Aero based websites are fast because they inline a lot of the resources that wou
 
 You can install aero via npm:
 
-    npm install aero-cms --save
+    npm install aero --save
 
 Now you can load the module:
 
-    var aero = require("aero-cms");
+    var aero = require("aero");
 
 And start it with a configuration file:
 
