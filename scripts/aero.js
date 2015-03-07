@@ -1,3 +1,5 @@
+"use strict";
+
 var aero = {
 	cache: [],
 	originalPath: window.location.pathname,
@@ -38,10 +40,10 @@ var aero = {
 		var pageScriptPath = aero.pageURL.replaceAll("{url}", publicURL);
 	
 		aero.publicURLToPage[publicURL] = {
-			"name" : name,
-			"id" : id,
-			"path" : pageScriptPath,
-			"publicURL" : publicURL
+			"name": name,
+			"id": id,
+			"path": pageScriptPath,
+			"publicURL": publicURL
 		};
 	},
 	
@@ -54,7 +56,7 @@ var aero = {
 	
 			// Scroll
 			if(aero.$navigation.offset().top < 0)
-				scrollToElement($navigation);
+				this.scrollToElement(this.$navigation);
 			
 			// Load page
 			var $this = $(this);
@@ -66,9 +68,9 @@ var aero = {
 	
 	// Scroll to element
 	scrollToElement: function(element, time) {
-		time = typeof(time) != 'undefined' ? time : 800;
+		time = (typeof time !== "undefined") ? time : 800;
 	
-		$container.animate({
+		this.$container.animate({
 			scrollTop: aero.$container.scrollTop() + element.offset().top
 		}, time);
 	},
@@ -85,7 +87,7 @@ var aero = {
 		} else {
 			var slashPos = publicURL.indexOf("/", 1);
 	
-			if(slashPos != -1) {
+			if(slashPos !== -1) {
 				genericURL = publicURL.substr(0, slashPos);
 				params = publicURL.substr(slashPos + 1);
 			}
@@ -99,7 +101,7 @@ var aero = {
 	
 	// Remove slash prefix
 	removeSlashPrefix: function(stri) {
-		if(stri.indexOf("/") == 0)
+		if(stri.indexOf("/") === 0)
 			return stri.substr(1);
 	
 		return stri;
@@ -114,20 +116,20 @@ var aero = {
 		if(page.name)
 			document.title = page.name;
 		else
-			document.title = baseTitle;
+			document.title = this.baseTitle;
 	
 		// Cached version
 		var url = page.path + "?params=" + params;
 	
 		if(url in aero.cache) {
-			var data = aero.cache[url];
+			var html = aero.cache[url];
 			
 			// Loading animation
 			aero.$loadingAnimation.stop().fadeIn(aero.fadeSpeed);
 			aero.$content.stop().fadeOut(aero.fadeSpeed, function() {
 				aero.$loadingAnimation.stop().fadeOut(aero.fadeSpeed);
 				
-				aero.$content.stop().html(data).fadeIn(aero.fadeSpeed, function() {
+				aero.$content.stop().html(html).fadeIn(aero.fadeSpeed, function() {
 					// Ajaxify links
 					aero.ajaxifyLinks();
 	
@@ -194,7 +196,7 @@ var aero = {
 	
 	// Mark active menu item
 	markActiveMenuItem: function(url) {
-		if(typeof url == 'undefined')
+		if(typeof url === "undefined")
 			url = window.location.pathname;
 	
 		var $navigationLinks = $(".navigation-link");
@@ -203,7 +205,7 @@ var aero = {
 			var $this = $(this);
 			var href = $this.attr("href");
 	
-			if(href == url) {
+			if(href === url) {
 				$this.addClass("active");
 			} else {
 				$this.removeClass("active");

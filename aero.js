@@ -1,13 +1,16 @@
-var fs = require("fs");
-var http = require("http");
-var path = require("path");
-var jade = require("jade");
-var express = require("express");
-var compress = require("compression");
-var objectAssign = require("object-assign");
-var scripts = require("./src/manager/scripts");
-var styles = require("./src/manager/styles");
-var pageConfig = require("./config/page");
+"use strict";
+
+var
+	fs = require("fs"),
+	http = require("http"),
+	path = require("path"),
+	jade = require("jade"),
+	express = require("express"),
+	compress = require("compression"),
+	objectAssign = require("object-assign"),
+	scripts = require("./src/manager/scripts"),
+	styles = require("./src/manager/styles"),
+	pageConfig = require("./config/page");
 
 var aero = {
 	// Express app
@@ -54,7 +57,7 @@ var aero = {
 			aero.loadScriptWithoutCompression(aero.root("cache/scripts/analytics.js"));
 			
 			if(aero.config.fonts.length > 0)
-				aero.download("http://fonts.googleapis.com/css?family=" + aero.config.fonts.join("|"), aero.root("cache/styles/google-fonts.css"), aero.loadAndStart)
+				aero.download("http://fonts.googleapis.com/css?family=" + aero.config.fonts.join("|"), aero.root("cache/styles/google-fonts.css"), aero.loadAndStart);
 			else
 				aero.loadAndStart();
 		});
@@ -189,7 +192,7 @@ var aero = {
 		});
 		
 		aero.js.push(scripts.compressJS(aero.makePages()));
-		aero.js.push('$(document).ready(function(){aero.setTitle(\"' + aero.config.siteName + '\");$(window).trigger("resize");});');
+		aero.js.push("$(document).ready(function(){aero.setTitle(\"" + aero.config.siteName + "\");$(window).trigger(\"resize\");});");
 		
 		var renderLayout = jade.compileFile(aero.config.layoutPath);
 		
@@ -271,10 +274,10 @@ var aero = {
 		Object.keys(aero.pages).forEach(function(key) {
 			var page = aero.pages[key];
 			
-			makePages.push('aero.makePage("' + page.title + '", "' + key + '", "' + page.url + '");');
+			makePages.push("aero.makePage(\"" + page.title + "\", \"" + key + "\", \"" + page.url + "\");");
 		});
 		
-		return "$(document).ready(function(){" + makePages.join('') + "});";
+		return "$(document).ready(function(){" + makePages.join("") + "});";
 	},
 	
 	// Start server
@@ -289,7 +292,7 @@ var aero = {
 		try {
 			fs.mkdirSync(dirPath);
 		} catch(e) {
-			if(e.code != "EEXIST")
+			if(e.code !== "EEXIST")
 				throw e;
 		}
 	},
@@ -310,7 +313,7 @@ var aero = {
 			return aero.rootPath;
 		
 		return path.join(aero.rootPath, fileName);
-	},
+	}
 };
 
 module.exports = aero;
