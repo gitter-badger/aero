@@ -1,17 +1,26 @@
 "use strict";
 
+// Modules
 var
 	fs = require("fs"),
 	http = require("http"),
 	path = require("path"),
 	jade = require("jade"),
+	chalk = require("chalk"),
 	express = require("express"),
 	compress = require("compression"),
 	objectAssign = require("object-assign"),
 	scripts = require("./src/manager/scripts"),
 	styles = require("./src/manager/styles"),
 	pageConfig = require("./config/page");
+	
+// Colors
+var colors = {
+	warn: chalk.bold.yellow,
+	error: chalk.bold.red
+};
 
+// Aero
 var aero = {
 	// Express app
 	app: express(),
@@ -96,7 +105,7 @@ var aero = {
 			try {
 				fs.accessSync(favIconPath);
 			} catch(e) {
-				console.error("favicon.ico doesn't exist in your root directory, please add one!");
+				console.error(colors.error("favicon.ico doesn't exist in your root directory, please add one!"));
 				response.end();
 				return;
 			}
@@ -192,7 +201,7 @@ var aero = {
 			}
 			
 			if(style != null) {
-				console.log(" - Compiling page style: " + stylFile);
+				console.log("|   Compiling page style: " + stylFile);
 				page.css = styles.compileStylus(style);
 			}
 			
@@ -257,19 +266,23 @@ var aero = {
 				var label = "Compiling page: " + this.id;
 				console.time(label);
 				
-				var renderPage = jade.compileFile(path.join(page.path, page.id + ".jade"));
-				
-				// Parameter: page
-				params.page = this;
-				
-				// We MUST save this in a local variable
-				page.code = styles.scoped(this.css) + renderPage(params);
-				
-				// Parameter: content
-				params.content = page.html;
-				
-				// Render Jade file to HTML
-				page.layoutCode = renderLayout(params);
+				try {
+					var renderPage = jade.compileFile(path.join(page.path, page.id + ".jade"));
+					
+					// Parameter: page
+					params.page = this;
+					
+					// We MUST save this in a local variable
+					page.code = styles.scoped(this.css) + renderPage(params);
+					
+					// Parameter: content
+					params.content = page.code;
+					
+					// Render Jade file to HTML
+					page.layoutCode = renderLayout(params);
+				} catch(e) {
+					console.error(colors.error("Error compiling page '%s': %s"), page.id, e);
+				}
 				
 				console.timeEnd(label);
 			};

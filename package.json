@@ -11,7 +11,8 @@
 		"object-assign": "*",
 		"compression": "*",
 		"uglify-js": "*",
-		"node-watch": "*"
+		"node-watch": "*",
+		"chalk": "*"
 	},
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1"
