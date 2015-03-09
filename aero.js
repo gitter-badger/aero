@@ -7,6 +7,7 @@ var
 	path = require("path"),
 	jade = require("jade"),
 	chalk = require("chalk"),
+	mkdirp = require("mkdirp"),
 	express = require("express"),
 	compress = require("compression"),
 	objectAssign = require("object-assign"),
@@ -47,19 +48,84 @@ var aero = {
 	events: new (require("events")).EventEmitter(),
 	
 	start: function(configFile) {
-		// Merge config file
-		if(typeof configFile !== "undefined")
-			aero.config = objectAssign(aero.config, JSON.parse(fs.readFileSync(configFile, "utf8")));
+		if(typeof configFile === "undefined")
+			configFile = "config.json";
 		
-		aero.init();
+		console.log("Loading config:", configFile);
 		
-		// jQuery is compressed already
+		// Read config file
+		fs.readFile(configFile, "utf8", function(error, data) {
+			if(error) {
+				console.warn(colors.warn("Couldn't find " + configFile + ", will automatically create one"));
+				aero.config.siteName = path.basename(path.resolve("."));
+				
+				// Automatically create a config file
+				fs.writeFile(configFile, "{\n\t\"siteName\": \"" + aero.config.siteName + "\"\n}", function(writeError) {
+					if(writeError)
+						throw writeError;
+				});
+			} else {
+				try {
+					// Load config.json
+					var userConfig = JSON.parse(data);
+					
+					// Merge config file
+					aero.config = objectAssign(aero.config, userConfig);
+				} catch(jsonError) {
+					if(jsonError instanceof SyntaxError) {
+						console.error(colors.error("There's a syntax error in " + configFile + ",", jsonError));
+					} else {
+						throw jsonError;
+					}
+				}
+			}
+			
+			aero.init();
+		});
+		
+		// Favicon
+		aero.app.get("/favicon.ico", function(request, response) {
+			var favIconPath = "favicon.ico";
+			
+			try {
+				fs.accessSync(favIconPath);
+			} catch(e) {
+				console.error(colors.error("favicon.ico doesn't exist in your root directory, please add one!"));
+				response.end();
+				return;
+			}
+			
+			response.sendFile(favIconPath, {root: "./"});
+		});
+		
+		// When a new page has been found
+		aero.events.on("newPage", function(pageName) {
+			console.log("Installing page: " + pageName);
+		});
+		
+		// Gzip
+		aero.app.use(compress());
+		
+		// jQuery
 		aero.loadScriptWithoutCompression(aero.root("cache/scripts/jquery.js"));
 		
 		// Compress these
 		aero.loadScript(aero.root("scripts/helpers.js"));
 		aero.loadScript(aero.root("scripts/aero.js"));
 		aero.loadScript(aero.root("scripts/init.js"));
+	},
+	
+	init: function() {
+		console.log("Initializing Aero");
+		
+		var staticFilesConfig = {
+			maxAge: aero.config.browser.cache.duration
+		};
+		
+		// Static files
+		aero.config.static.forEach(function(filePath) {
+			aero.app.use("/" + filePath, express.static("./" + filePath, staticFilesConfig));
+		});
 		
 		// Download latest version of Google Analytics
 		aero.download("http://www.google-analytics.com/analytics.js", aero.root("cache/scripts/analytics.js"), function() {
@@ -77,45 +143,15 @@ var aero = {
 			aero.loadAdminInterface();
 		}
 		
+		if(aero.config.pages.length === 0)
+			console.warn(colors.warn("No pages yet, consider adding \"pages\": [\"helloworld\"] to your config.json"));
+		
 		aero.watch(aero.config.layoutPath, function(filePath) {
 			console.log("Layout changed:", filePath);
 			aero.compilePages();
 		});
 		
 		aero.startServer();
-	},
-	
-	init: function() {
-		var staticFilesConfig = {
-			maxAge: aero.config.browser.cache.duration
-		};
-		
-		// Gzip
-		aero.app.use(compress());
-		
-		// Static files
-		aero.config.static.forEach(function(filePath) {
-			aero.app.use("/" + filePath, express.static("./" + filePath, staticFilesConfig));
-		});
-		
-		// Favicon
-		aero.app.get("/favicon.ico", function(request, response) {
-			var favIconPath = "favicon.ico";
-			
-			try {
-				fs.accessSync(favIconPath);
-			} catch(e) {
-				console.error(colors.error("favicon.ico doesn't exist in your root directory, please add one!"));
-				response.end();
-				return;
-			}
-			
-			response.sendFile(favIconPath, {root: "./"});
-		});
-
-		aero.events.on("newPage", function(pageName) {
-			console.log("Installing page: " + pageName);
-		});
 	},
 	
 	loadUserData: function() {
@@ -264,27 +300,48 @@ var aero = {
 			
 			page.compile = function() {
 				var label = "Compiling page: " + this.id;
-				console.time(label);
 				
-				try {
-					var renderPage = jade.compileFile(path.join(page.path, page.id + ".jade"));
+				var renderIt = function() {
+					console.time(label);
+					
+					page.templatePath = path.join(page.path, page.id + ".jade");
+					
+					var renderPage = jade.compileFile(page.templatePath);
 					
 					// Parameter: page
-					params.page = this;
+					params.page = page;
 					
 					// We MUST save this in a local variable
-					page.code = styles.scoped(this.css) + renderPage(params);
+					page.code = styles.scoped(page.css) + renderPage(params);
 					
 					// Parameter: content
 					params.content = page.code;
 					
 					// Render Jade file to HTML
 					page.layoutCode = renderLayout(params);
-				} catch(e) {
-					console.error(colors.error("Error compiling page '%s': %s"), page.id, e);
-				}
+					
+					console.timeEnd(label);
+				};
 				
-				console.timeEnd(label);
+				try {
+					renderIt();
+				} catch(e) {
+					console.warn(colors.warn("'%s' doesn't exist yet, automatically creating it"), page.path);
+					
+					// Automatically create a page
+					mkdirp(page.path, function(error) {
+						if(error) {
+							console.error(colors.error(error));
+						} else {
+							fs.writeFile(page.templatePath, "h2 " + page.id, function(writeError) {
+								if(writeError)
+									throw writeError;
+								
+								renderIt();
+							});
+						}
+					});
+				}
 			};
 			
 			page.compile();

@@ -1,6 +1,6 @@
 {
 	"name": "aero",
-	"version": "0.1.7",
+	"version": "0.1.8",
 	"description": "CMS based on Node, Express, Jade and Stylus.",
 	"main": "aero.js",
 	"dependencies": {
@@ -12,7 +12,8 @@
 		"compression": "*",
 		"uglify-js": "*",
 		"node-watch": "*",
-		"chalk": "*"
+		"chalk": "*",
+		"mkdirp": "*"
 	},
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1"
