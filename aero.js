@@ -68,6 +68,11 @@ var aero = {
 			aero.loadAdminInterface();
 		}
 		
+		aero.watch(aero.config.layoutPath, function(filePath) {
+			console.log("Layout changed:", filePath);
+			aero.compilePages();
+		});
+		
 		aero.startServer();
 	},
 	
@@ -122,7 +127,7 @@ var aero = {
 		});
 		
 		// Pages
-		return aero.loadPages(aero.config.pagesPath);
+		return aero.loadPages();
 	},
 	
 	loadScript: function(filePath) {
@@ -144,6 +149,9 @@ var aero = {
 	},
 	
 	loadPages: function(pagesPath) {
+		if(typeof pagesPath === "undefined")
+			pagesPath = aero.config.pagesPath;
+		
 		// Filter directories
 		var pages = aero.config.pages.map(function(file) {
 			return {
@@ -154,20 +162,21 @@ var aero = {
 		
 		// Find all pages
 		pages.forEach(function(file) {
-			var pageName = file.name;
-			var jsonFile = path.join(file.fullPath, pageName + ".json");
-			var stylFile = path.join(file.fullPath, pageName + ".styl");
-			
-			var pageJSON = null;
+			var pageId = file.name;
+			var jsonFile = path.join(file.fullPath, pageId + ".json");
+			var stylFile = path.join(file.fullPath, pageId + ".styl");
+			var pageJSON;
 			
 			// JSON
 			try {
 				pageJSON = fs.readFileSync(jsonFile, "utf8");
 			} catch(error) {
+				pageJSON = null;
 				//console.warn("Missing page information file: " + jsonFile);
 			}
 			
-			var page = pageConfig(pageName);
+			// Create page
+			var page = pageConfig(pageId);
 			
 			// Merge
 			if(pageJSON != null)
@@ -187,64 +196,33 @@ var aero = {
 				page.css = styles.compileStylus(style);
 			}
 			
-			aero.pages[pageName] = page;
-			aero.events.emit("newPage", pageName);
+			aero.pages[pageId] = page;
+			aero.events.emit("newPage", pageId);
 		});
 		
 		aero.js.push(scripts.compressJS(aero.makePages()));
 		aero.js.push("$(document).ready(function(){aero.setTitle(\"" + aero.config.siteName + "\");$(window).trigger(\"resize\");});");
 		
-		var renderLayout = jade.compileFile(aero.config.layoutPath);
+		aero.compilePages();
 		
-		var params = {
-			siteName: aero.config.siteName,
-			css: aero.css.join(" "),
-			js: aero.js.join(";"),
-			pages: aero.pages
-		};
-		
-		// Compile jade files
-		pages.forEach(function(file) {
-			var key = file.name;
-			var page = aero.pages[key];
-			var pagePath = path.join(aero.config.pagesPath, key);
-			var html = "";
-			var layout = "";
-			
-			page.compile = function() {
-				console.log("Compiling page: " + this.title);
-				
-				var renderPage = jade.compileFile(path.join(pagePath, key + ".jade"));
-				
-				// Parameter: page
-				params.page = this;
-				
-				// We MUST save this in a local variable
-				html = styles.scoped(this.css) + renderPage(params);
-				
-				// Parameter: content
-				params.content = html;
-				
-				// Render Jade file to HTML
-				layout = renderLayout(params);
-			};
-			
-			page.compile();
+		// Set up routing
+		Object.keys(aero.pages).forEach(function(pageId) {
+			var page = aero.pages[pageId];
 			
 			// Set up raw response with cached output
 			aero.app.get("/raw/" + page.url, function(request, response) {
 				response.header("Content-Type", "text/html; charset=utf-8");
-				response.end(html);
+				response.end(page.code);
 			});
 			
 			// Set up full response with cached output
 			aero.app.get("/" + page.url, function(request, response) {
 				response.header("Content-Type", "text/html; charset=utf-8");
-				response.end(layout);
+				response.end(page.layoutCode);
 			});
 			
 			// Watch directory
-			aero.watch(pagePath, function(filePath) {
+			aero.watch(page.path, function(filePath) {
 				try {
 					console.log("File changed:", filePath);
 					page.compile();
@@ -255,6 +233,49 @@ var aero = {
 		});
 		
 		return true;
+	},
+	
+	compilePages: function() {
+		var renderLayout = jade.compileFile(aero.config.layoutPath);
+		
+		var params = {
+			siteName: aero.config.siteName,
+			css: aero.css.join(" "),
+			js: aero.js.join(";"),
+			pages: aero.pages
+		};
+		
+		// Compile jade files
+		Object.keys(aero.pages).forEach(function(pageId) {
+			var page = aero.pages[pageId];
+			
+			page.path = path.join(aero.config.pagesPath, page.id);
+			page.code = "";
+			page.layoutCode = "";
+			
+			page.compile = function() {
+				var label = "Compiling page: " + this.id;
+				console.time(label);
+				
+				var renderPage = jade.compileFile(path.join(page.path, page.id + ".jade"));
+				
+				// Parameter: page
+				params.page = this;
+				
+				// We MUST save this in a local variable
+				page.code = styles.scoped(this.css) + renderPage(params);
+				
+				// Parameter: content
+				params.content = page.html;
+				
+				// Render Jade file to HTML
+				page.layoutCode = renderLayout(params);
+				
+				console.timeEnd(label);
+			};
+			
+			page.compile();
+		});
 	},
 	
 	loadAdminInterface: function() {

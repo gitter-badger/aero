@@ -13,7 +13,14 @@ var scripts = {
 	},
 	
 	compressJSFile: function(filePath) {
-		var data = fs.readFileSync(filePath, "utf8");
+		var data = "";
+		
+		try {
+			data = fs.readFileSync(filePath, "utf8");
+		} catch(e) {
+			console.error("Couldn't find script: " + filePath);
+		}
+		
 		return this.compressJS(data);
 	}
 };

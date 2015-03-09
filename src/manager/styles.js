@@ -22,7 +22,15 @@ var styles = {
 	},
 	
 	compileStylusFile: function(filePath) {
-		return this.compileStylus(fs.readFileSync(filePath, "utf8"));
+		var data = "";
+		
+		try {
+			data = fs.readFileSync(filePath, "utf8");
+		} catch(e) {
+			console.error("Couldn't find style sheet: " + filePath);
+		}
+		
+		return this.compileStylus(data);
 	},
 	
 	scoped: function(css) {
