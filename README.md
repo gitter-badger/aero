@@ -17,11 +17,11 @@ Now you can load the module:
 
 	var aero = require("aero");
 
-And start it with a configuration file:
+And start it:
 
-	aero.start("config.json");
+	aero.start();
 
-That's all you need for your index.js file. Create a configuration file (TODO: document this step) and run it using
+That's all you need for your index.js file. Run it using:
 
 	node index.js
 
