@@ -10,6 +10,12 @@ module.exports = {
 	fonts: [],
 	pages: [],
 	port: 80,
+	ssl: {
+		cert: undefined,
+		key: undefined,
+		ca: undefined,
+		port: 443
+	},
 	browser: {
 		cache: {
 			duration: 30 * 24 * 60 * 60 * 1000

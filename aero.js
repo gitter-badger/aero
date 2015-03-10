@@ -3,6 +3,7 @@
 // Modules
 var
 	fs = require("fs"),
+	spdy = require("spdy"),
 	http = require("http"),
 	path = require("path"),
 	jade = require("jade"),
@@ -23,6 +24,9 @@ var colors = {
 
 // Aero
 var aero = {
+	// Express reference
+	express: express,
+	
 	// Express app
 	app: express(),
 	
@@ -117,6 +121,8 @@ var aero = {
 	
 	init: function() {
 		console.log("Initializing Aero");
+		
+		aero.app.set("x-powered-by", "Aero");
 		
 		var staticFilesConfig = {
 			maxAge: aero.config.browser.cache.duration
@@ -373,14 +379,42 @@ var aero = {
 	
 	// Start server
 	startServer: function() {
+		if(typeof aero.config.ssl.key !== "undefined") {
+			try {
+				aero.startSpdyServer();
+			} catch(e) {
+				//console.warn(colors.warn("SSL", e));
+				console.warn("SSL files could not be loaded, ignoring it");
+			}
+		}
+		
 		aero.app.listen(aero.config.port, undefined, undefined, function(error) {
 			if(error) {
 				console.error(colors.error("Couldn't listen on port %d"), aero.config.port);
 				return;
 			}
 			
-			console.log(aero.config.siteName + " started on port " + aero.config.port + ".");
+			console.log(aero.config.siteName + " started on port " + aero.config.port + " (http)");
 		});
+	},
+	
+	startSpdyServer: function() {
+		var spdyOptions = {
+			key: fs.readFileSync(aero.config.ssl.key),
+			cert: fs.readFileSync(aero.config.ssl.cert),
+			ca: fs.readFileSync(aero.config.ssl.ca),
+			
+			// Server's window size
+			windowSize: 1024 * 1024,
+			
+			// Will the server send 3.1 frames on 3.0 *plain* spdy?
+			autoSpdy31: false
+		};
+		
+		var server = spdy.createServer(spdyOptions, aero.app);
+		server.listen(aero.config.ssl.port);
+		
+		console.log(aero.config.siteName + " started on port " + aero.config.ssl.port + " (https)");
 	},
 	
 	createDirectory: function(dirPath) {

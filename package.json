@@ -4,10 +4,11 @@
 	"description": "CMS based on Node, Express, Jade and Stylus.",
 	"main": "aero.js",
 	"dependencies": {
-		"express": "*",
+		"express": "4.x",
 		"jade": "*",
 		"stylus": "*",
 		"nib": "*",
+		"spdy": "*",
 		"object-assign": "*",
 		"compression": "*",
 		"uglify-js": "*",
