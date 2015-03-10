@@ -373,10 +373,14 @@ var aero = {
 	
 	// Start server
 	startServer: function() {
-		// Start server
-		aero.app.listen(aero.config.port);
-		
-		console.log(aero.config.siteName + " started on port " + aero.config.port + ".");
+		aero.app.listen(aero.config.port, undefined, undefined, function(error) {
+			if(error) {
+				console.error(colors.error("Couldn't listen on port %d"), aero.config.port);
+				return;
+			}
+			
+			console.log(aero.config.siteName + " started on port " + aero.config.port + ".");
+		});
 	},
 	
 	createDirectory: function(dirPath) {
