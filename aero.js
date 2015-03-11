@@ -4,10 +4,9 @@
 var
 	fs = require("fs"),
 	spdy = require("spdy"),
-	http = require("http"),
 	path = require("path"),
 	jade = require("jade"),
-	mkdirp = require("mkdirp"),
+	fse = require("fs-extra"),
 	express = require("express"),
 	compress = require("compression"),
 	colors = require("./config/colors"),
@@ -24,9 +23,6 @@ var aero = {
 	// Express app
 	app: express(),
 	
-	// Aero configuration
-	config: require("./config/config"),
-	
 	// Includes all page objects
 	pages: {},
 	
@@ -37,7 +33,9 @@ var aero = {
 	css: [],
 	
 	// Components
+	config: require("./config/config"),
 	watch: require("node-watch"),
+	download: require("./src/download"),
 	
 	// Aero root folder
 	rootPath: path.dirname(module.filename),
@@ -45,6 +43,7 @@ var aero = {
 	// Aero event manager
 	events: new (require("events")).EventEmitter(),
 	
+	// Start
 	start: function(configFile) {
 		if(typeof configFile === "undefined")
 			configFile = "config.json";
@@ -82,18 +81,18 @@ var aero = {
 		});
 		
 		// Favicon
-		aero.app.get("/favicon.ico", function(request, response) {
-			var favIconPath = "favicon.ico";
-			
-			try {
-				fs.accessSync(favIconPath);
-			} catch(e) {
-				console.error(colors.error("favicon.ico doesn't exist in your root directory, please add one!"));
-				response.end();
+		var favIconPath = "favicon.ico";
+		
+		fs.exists(favIconPath, function(exists) {
+			if(!exists) {
+				console.warn(colors.warn("favicon.ico doesn't exist in your root directory, please add one!"));
 				return;
 			}
 			
-			response.sendFile(favIconPath, {root: "./"});
+			// Send icon
+			aero.app.get("/favicon.ico", function(request, response) {
+				response.sendFile(favIconPath, {root: "./"});
+			});
 		});
 		
 		// When a new page has been found
@@ -113,6 +112,7 @@ var aero = {
 		aero.loadScript(aero.root("scripts/init.js"));
 	},
 	
+	// Init
 	init: function() {
 		console.log("Initializing Aero");
 		
@@ -162,17 +162,31 @@ var aero = {
 			aero.loadStyle(aero.root("cache/styles/google-fonts.css"));
 		
 		// Styles
-		aero.config.styles.forEach(function(fileName) {
-			aero.loadStyle(path.join(aero.config.stylesPath, fileName + ".styl"));
+		fse.ensureDir(path.resolve(aero.config.stylesPath), function(error) {
+			if(error)
+				throw error;
+			
+			// Load styles
+			aero.loadUserStyles();
 		});
 		
 		// Scripts
-		aero.config.scripts.forEach(function(fileName) {
-			aero.loadScript(path.join(aero.config.scriptsPath, fileName + ".js"));
+		fse.ensureDir(path.resolve(aero.config.scriptsPath), function(error) {
+			if(error)
+				throw error;
+			
+			// Load scripts
+			aero.loadUserScripts();
 		});
 		
 		// Pages
 		return aero.loadPages();
+	},
+	
+	loadUserScripts: function() {
+		aero.config.scripts.forEach(function(fileName) {
+			aero.loadScript(path.join(aero.config.scriptsPath, fileName + ".js"));
+		});
 	},
 	
 	loadScript: function(filePath) {
@@ -185,6 +199,12 @@ var aero = {
 		console.log("Loading script: " + path.basename(filePath, ".js"));
 		
 		aero.js.push(fs.readFileSync(filePath, "utf8"));
+	},
+	
+	loadUserStyles: function() {
+		aero.config.styles.forEach(function(fileName) {
+			aero.loadStyle(path.join(aero.config.stylesPath, fileName + ".styl"));
+		});
 	},
 	
 	loadStyle: function(filePath) {
@@ -329,17 +349,21 @@ var aero = {
 					console.warn(colors.warn("'%s' doesn't exist yet, automatically creating it"), page.path);
 					
 					// Automatically create a page
-					mkdirp(page.path, function(error) {
-						if(error) {
-							console.error(colors.error(error));
-						} else {
+					fse.ensureDir(page.path, function(error) {
+						if(error)
+							throw error;
+						
+						fs.exists(page.templatePath, function(exists) {
+							if(exists)
+								return;
+							
 							fs.writeFile(page.templatePath, "h2 " + page.id, function(writeError) {
 								if(writeError)
 									throw writeError;
 								
 								renderIt();
 							});
-						}
+						});
 					});
 				}
 			};
@@ -409,26 +433,6 @@ var aero = {
 		server.listen(aero.config.ssl.port);
 		
 		console.log(aero.config.siteName + " started on port " + aero.config.ssl.port + " (https)");
-	},
-	
-	createDirectory: function(dirPath) {
-		try {
-			fs.mkdirSync(dirPath);
-		} catch(e) {
-			if(e.code !== "EEXIST")
-				throw e;
-		}
-	},
-	
-	download: function(from, to, callBack) {
-		return http.get(from, function(response) {
-			var file = fs.createWriteStream(to);
-			response.pipe(file);
-			
-			file.on("finish", function() {
-				file.close(callBack);
-			});
-		});
 	},
 	
 	root: function(fileName) {
