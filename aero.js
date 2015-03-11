@@ -7,20 +7,14 @@ var
 	http = require("http"),
 	path = require("path"),
 	jade = require("jade"),
-	chalk = require("chalk"),
 	mkdirp = require("mkdirp"),
 	express = require("express"),
 	compress = require("compression"),
+	colors = require("./config/colors"),
+	pageConfig = require("./config/page"),
 	objectAssign = require("object-assign"),
-	scripts = require("./src/manager/scripts"),
 	styles = require("./src/manager/styles"),
-	pageConfig = require("./config/page");
-	
-// Colors
-var colors = {
-	warn: chalk.bold.yellow,
-	error: chalk.bold.red
-};
+	scripts = require("./src/manager/scripts");
 
 // Aero
 var aero = {
