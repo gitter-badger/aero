@@ -156,13 +156,13 @@ var aero = {
 	
 	loadUserData: function() {
 		// CSS reset
-		aero.loadStyle(aero.root("styles/reset.styl"));
+		aero.loadStyleSync(aero.root("styles/reset.styl"));
 		
 		if(aero.config.fonts.length > 0)
-			aero.loadStyle(aero.root("cache/styles/google-fonts.css"));
+			aero.loadStyleSync(aero.root("cache/styles/google-fonts.css"));
 		
 		// Styles
-		fse.ensureDir(path.resolve(aero.config.stylesPath), function(error) {
+		fse.ensureDir(aero.config.stylesPath, function(error) {
 			if(error)
 				throw error;
 			
@@ -171,7 +171,7 @@ var aero = {
 		});
 		
 		// Scripts
-		fse.ensureDir(path.resolve(aero.config.scriptsPath), function(error) {
+		fse.ensureDir(aero.config.scriptsPath, function(error) {
 			if(error)
 				throw error;
 			
@@ -203,11 +203,19 @@ var aero = {
 	
 	loadUserStyles: function() {
 		aero.config.styles.forEach(function(fileName) {
-			aero.loadStyle(path.join(aero.config.stylesPath, fileName + ".styl"));
+			aero.loadStyleSync(path.join(aero.config.stylesPath, fileName + ".styl"));
 		});
 	},
 	
 	loadStyle: function(filePath) {
+		console.log("Compiling style: " + path.basename(filePath, ".styl"));
+		
+		styles.compileStylusFile(filePath, function(css) {
+			aero.css.push(css);
+		});
+	},
+	
+	loadStyleSync: function(filePath) {
 		console.log("Compiling style: " + path.basename(filePath, ".styl"));
 		
 		aero.css.push(styles.compileStylusFile(filePath));
@@ -229,7 +237,6 @@ var aero = {
 		pages.forEach(function(file) {
 			var pageId = file.name;
 			var jsonFile = path.join(file.fullPath, pageId + ".json");
-			var stylFile = path.join(file.fullPath, pageId + ".styl");
 			var pageJSON;
 			
 			// JSON
@@ -246,20 +253,6 @@ var aero = {
 			// Merge
 			if(pageJSON != null)
 				page = objectAssign(page, JSON.parse(pageJSON));
-			
-			var style = null;
-			
-			// Style
-			try {
-				style = fs.readFileSync(stylFile, "utf8");
-			} catch(error) {
-				//console.warn("Missing stylus file: " + stylFile);
-			}
-			
-			if(style != null) {
-				console.log("|   Compiling page style: " + stylFile);
-				page.css = styles.compileStylus(style);
-			}
 			
 			aero.pages[pageId] = page;
 			aero.events.emit("newPage", pageId);
@@ -290,7 +283,7 @@ var aero = {
 			aero.watch(page.path, function(filePath) {
 				try {
 					console.log("File changed:", filePath);
-					page.compile();
+					page.compile(path.extname(filePath) == ".styl");
 				} catch(e) {
 					console.error(e);
 				}
@@ -318,12 +311,30 @@ var aero = {
 			page.code = "";
 			page.layoutCode = "";
 			
-			page.compile = function() {
+			page.compile = function(compileStyle) {
 				var label = "Compiling page: " + this.id;
 				
 				var renderIt = function() {
 					console.time(label);
 					
+					// Style
+					if(compileStyle) {
+						var stylFile = path.join(page.path, page.id + ".styl");
+						var style = null;
+						
+						try {
+							style = fs.readFileSync(stylFile, "utf8");
+						} catch(error) {
+							//console.warn("Missing stylus file: " + stylFile);
+						}
+						
+						if(style != null) {
+							console.log("|   Compiling page style: " + stylFile);
+							page.css = styles.compileStylus(style);
+						}
+					}
+					
+					// Template
 					page.templatePath = path.join(page.path, page.id + ".jade");
 					
 					var renderPage = jade.compileFile(page.templatePath);
@@ -368,7 +379,7 @@ var aero = {
 				}
 			};
 			
-			page.compile();
+			page.compile(true);
 		});
 	},
 	
