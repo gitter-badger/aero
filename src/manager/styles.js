@@ -14,7 +14,7 @@ var styles = {
 			.use(nib())
 			.render(function(error, css) {
 				if(error)
-					throw error;
+					console.error(colors.error(error));
 				
 				output = css;
 			});
@@ -52,7 +52,7 @@ var styles = {
 			createStylusFile(filePath, data);
 		}
 		
-		return styles.compileStylus(data);
+		return this.compileStylus(data);
 	},
 	
 	scoped: function(css) {

@@ -29,8 +29,8 @@ var aero = {
 	// An array of strings containing all the JavaScript code for the site
 	js: [],
 	
-	// An array of strings containing all the CSS for the site
-	css: [],
+	// Collection of strings containing all the CSS for the site
+	css: {},
 	
 	// Components
 	config: require("./config/config"),
@@ -49,6 +49,23 @@ var aero = {
 			configFile = "config.json";
 		
 		console.log("Loading config:", configFile);
+		
+		// When a new page has been found
+		aero.events.on("newPage", function(pageName) {
+			console.log("Installing page: " + pageName);
+		});
+		
+		// When a new style has been found
+		aero.events.on("newStyle", function(stylePath, css) {
+			console.log("Installing style: " + stylePath);
+			aero.css[stylePath] = css;
+			aero.compilePages();
+			
+			aero.watch(stylePath, function(filePath) {
+				console.log("Style changed:", filePath);
+				aero.loadStyle(filePath);
+			});
+		});
 		
 		// Read config file
 		fs.readFile(configFile, "utf8", function(error, data) {
@@ -93,11 +110,6 @@ var aero = {
 			aero.app.get("/favicon.ico", function(request, response) {
 				response.sendFile(favIconPath, {root: "./"});
 			});
-		});
-		
-		// When a new page has been found
-		aero.events.on("newPage", function(pageName) {
-			console.log("Installing page: " + pageName);
 		});
 		
 		// Gzip
@@ -156,10 +168,10 @@ var aero = {
 	
 	loadUserData: function() {
 		// CSS reset
-		aero.loadStyleSync(aero.root("styles/reset.styl"));
+		aero.loadStyle(aero.root("styles/reset.styl"));
 		
 		if(aero.config.fonts.length > 0)
-			aero.loadStyleSync(aero.root("cache/styles/google-fonts.css"));
+			aero.loadStyle(aero.root("cache/styles/google-fonts.css"));
 		
 		// Styles
 		fse.ensureDir(aero.config.stylesPath, function(error) {
@@ -177,10 +189,13 @@ var aero = {
 			
 			// Load scripts
 			aero.loadUserScripts();
+			
+			// Load pages
+			aero.loadPages();
 		});
 		
 		// Pages
-		return aero.loadPages();
+		return true;
 	},
 	
 	loadUserScripts: function() {
@@ -193,17 +208,19 @@ var aero = {
 		console.log("Compiling script: " + path.basename(filePath, ".js"));
 		
 		aero.js.push(scripts.compressJSFile(filePath));
+		aero.events.emit("newScript", filePath);
 	},
 	
 	loadScriptWithoutCompression: function(filePath) {
 		console.log("Loading script: " + path.basename(filePath, ".js"));
 		
 		aero.js.push(fs.readFileSync(filePath, "utf8"));
+		aero.events.emit("newScript", filePath);
 	},
 	
 	loadUserStyles: function() {
 		aero.config.styles.forEach(function(fileName) {
-			aero.loadStyleSync(path.join(aero.config.stylesPath, fileName + ".styl"));
+			aero.loadStyle(path.join(aero.config.stylesPath, fileName + ".styl"));
 		});
 	},
 	
@@ -211,14 +228,8 @@ var aero = {
 		console.log("Compiling style: " + path.basename(filePath, ".styl"));
 		
 		styles.compileStylusFile(filePath, function(css) {
-			aero.css.push(css);
+			aero.events.emit("newStyle", filePath, css);
 		});
-	},
-	
-	loadStyleSync: function(filePath) {
-		console.log("Compiling style: " + path.basename(filePath, ".styl"));
-		
-		aero.css.push(styles.compileStylusFile(filePath));
 	},
 	
 	loadPages: function(pagesPath) {
@@ -234,7 +245,7 @@ var aero = {
 		});
 		
 		// Find all pages
-		pages.forEach(function(file) {
+		aero.pages = pages.map(function(file) {
 			var pageId = file.name;
 			var jsonFile = path.join(file.fullPath, pageId + ".json");
 			var pageJSON;
@@ -254,8 +265,11 @@ var aero = {
 			if(pageJSON != null)
 				page = objectAssign(page, JSON.parse(pageJSON));
 			
-			aero.pages[pageId] = page;
-			aero.events.emit("newPage", pageId);
+			return page;
+		});
+		
+		aero.pages.forEach(function(page) {
+			aero.events.emit("newPage", page.id);
 		});
 		
 		aero.js.push(scripts.compressJS(aero.makePages()));
@@ -298,7 +312,7 @@ var aero = {
 		
 		var params = {
 			siteName: aero.config.siteName,
-			css: aero.css.join(" "),
+			css: Object.keys(aero.css).map(function(v) { return aero.css[v]; }).join(" "),
 			js: aero.js.join(";"),
 			pages: aero.pages
 		};
