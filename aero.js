@@ -60,11 +60,6 @@ var aero = {
 			console.log("Installing style: " + stylePath);
 			aero.css[stylePath] = css;
 			aero.compilePages();
-			
-			aero.watch(stylePath, function(filePath) {
-				console.log("Style changed:", filePath);
-				aero.loadStyle(filePath);
-			});
 		});
 		
 		// Read config file
@@ -229,6 +224,12 @@ var aero = {
 		
 		styles.compileStylusFile(filePath, function(css) {
 			aero.events.emit("newStyle", filePath, css);
+			
+			// Watch for changes
+			aero.watch(filePath, function(changedFilePath) {
+				console.log("Style changed:", changedFilePath);
+				aero.loadStyle(changedFilePath);
+			});
 		});
 	},
 	
