@@ -316,8 +316,8 @@ var aero = {
 		
 		var params = {
 			siteName: aero.config.siteName,
-			css: aero.css.compile(aero.config.styles),
-			js: aero.js.compile(aero.config.scripts),
+			css: aero.css.compile(["reset", "google-fonts.css"].concat(aero.config.styles)),
+			js: aero.js.compile(["jquery", "helpers", "aero", "init", "analytics"].concat(aero.config.scripts).concat(["aero-pages-js", "aero-setup-js"])),
 			pages: aero.pages
 		};
 		
