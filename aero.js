@@ -1,8 +1,5 @@
 "use strict";
 
-// Module directory
-process.env.NODE_PATH = __dirname;
-
 // Modules
 var
 	fs = require("fs-extra"),
@@ -31,10 +28,16 @@ var aero = {
 	// All the CSS code for the site
 	css: require("aero-css-manager"),
 	
-	// Components
+	// Default config
 	config: require("./config/config"),
+	
+	// File system watcher
 	watch: require("node-watch"),
+	
+	// Download function
 	download: require("aero-download"),
+	
+	// Favicon support
 	initFavIcon: require("./src/favicon"),
 	
 	// Aero event manager
@@ -48,10 +51,12 @@ var aero = {
 	
 	// Start
 	start: function(configFile) {
-		if(typeof configFile === "undefined")
-			configFile = "config.json";
-		
-		console.log("Loading config:", configFile);
+		// When config has been loaded
+		aero.events.on("configLoaded", function() {
+			console.timeEnd("Loading config");
+			
+			aero.init();
+		});
 		
 		// When a new page has been found
 		aero.events.on("newPage", function(pageName) {
@@ -59,42 +64,15 @@ var aero = {
 		});
 		
 		// When a new style has been found
-		aero.events.on("newStyle", function(name, css) {
-			console.log("Installing style: " + name);
+		aero.events.on("cssChanged", function(name, css) {
+			console.log("Updating style: " + name);
 			
 			aero.css[name] = css;
 			aero.compilePages();
 		});
 		
 		// Read config file
-		fs.readFile(configFile, "utf8", function(error, data) {
-			if(error) {
-				console.warn(colors.warn("Couldn't find " + configFile + ", will automatically create one"));
-				aero.config.siteName = path.basename(path.resolve("."));
-				
-				// Automatically create a config file
-				fs.writeFile(configFile, "{\n\t\"siteName\": \"" + aero.config.siteName + "\"\n}", function(writeError) {
-					if(writeError)
-						throw writeError;
-				});
-			} else {
-				try {
-					// Load config.json
-					var userConfig = JSON.parse(data);
-					
-					// Merge config file
-					aero.config = objectAssign(aero.config, userConfig);
-				} catch(jsonError) {
-					if(jsonError instanceof SyntaxError) {
-						console.error(colors.error("There's a syntax error in " + configFile + ",", jsonError));
-					} else {
-						throw jsonError;
-					}
-				}
-			}
-			
-			aero.init();
-		});
+		aero.loadConfig(configFile);
 		
 		// jQuery
 		aero.loadScript("jquery", aero.root("cache/scripts/jquery.js"), false);
@@ -158,12 +136,48 @@ var aero = {
 			aero.server.startHTTPS(aero.app, aero.config.ssl.port, aero.config.ssl);
 	},
 	
+	loadConfig: function(configFile) {
+		if(typeof configFile === "undefined")
+			configFile = "config.json";
+		
+		console.time("Loading config");
+		
+		fs.readFile(configFile, "utf8", function(error, data) {
+			if(error) {
+				console.warn(colors.warn("Couldn't find " + configFile + ", will automatically create one"));
+				aero.config.siteName = path.basename(path.resolve("."));
+				
+				// Automatically create a config file
+				fs.writeFile(configFile, "{\n\t\"siteName\": \"" + aero.config.siteName + "\"\n}", function(writeError) {
+					if(writeError)
+						throw writeError;
+				});
+			} else {
+				try {
+					// Load config.json
+					var userConfig = JSON.parse(data);
+					
+					// Merge config file
+					aero.config = objectAssign(aero.config, userConfig);
+				} catch(jsonError) {
+					if(jsonError instanceof SyntaxError) {
+						console.error(colors.error("There's a syntax error in " + configFile + ",", jsonError));
+					} else {
+						throw jsonError;
+					}
+				}
+			}
+			
+			aero.events.emit("configLoaded");
+		});
+	},
+	
 	loadUserData: function() {
 		// CSS reset
-		aero.loadStyle(aero.root("styles/reset.styl"));
+		aero.loadStyle("aero-reset", aero.root("styles/reset.styl"));
 		
 		if(aero.config.fonts.length > 0)
-			aero.loadStyle(aero.root("cache/styles/google-fonts.css"));
+			aero.loadStyle("aero-fonts", aero.root("cache/styles/google-fonts.css"));
 		
 		// Styles
 		fs.ensureDir(aero.config.stylesPath, function(error) {
@@ -195,7 +209,7 @@ var aero = {
 	
 	loadUserStyles: function() {
 		aero.config.styles.forEach(function(fileName) {
-			aero.loadStyle(path.join(aero.config.stylesPath, fileName + ".styl"));
+			aero.loadStyle(fileName, path.join(aero.config.stylesPath, fileName + ".styl"));
 		});
 	},
 	
@@ -206,18 +220,20 @@ var aero = {
 		aero.events.emit("newScript", id);
 	},
 	
-	loadStyle: function(filePath) {
-		var id = path.basename(filePath, ".styl");
+	loadStyle: function(id, filePath) {
 		console.log("Compiling style: " + id);
 		
-		styles.compileStylusFile(filePath, function(css) {
-			aero.events.emit("newStyle", id, css);
-			
-			// Watch for changes
-			aero.watch(filePath, function(changedFilePath) {
-				console.log("Style changed:", changedFilePath);
-				aero.loadStyle(changedFilePath);
+		var recompileStyle = function() {
+			styles.compileStylusFile(filePath, function(css) {
+				aero.events.emit("cssChanged", id, css);
 			});
+		};
+		
+		recompileStyle();
+		
+		aero.watch(filePath, function(changedFilePath) {
+			console.log("Style changed:", changedFilePath);
+			recompileStyle();
 		});
 	},
 	
@@ -304,7 +320,7 @@ var aero = {
 		
 		var params = {
 			siteName: aero.config.siteName,
-			css: aero.css.compile(["reset", "google-fonts.css"].concat(aero.config.styles)),
+			css: aero.css.compile(["aero-reset", "aero-fonts"].concat(aero.config.styles)),
 			js: aero.js.compile(["jquery", "aero-helpers", "aero-main", "aero-init", "google-analytics", "aero-pages-js", "aero-setup-js"].concat(aero.config.scripts)),
 			pages: aero.pages
 		};
@@ -332,7 +348,7 @@ var aero = {
 			};
 			
 			page.compile = function(compileStyle) {
-				var label = "|   Compiling page: " + this.id;
+				var label = "| Compiling page: " + this.id;
 				
 				var renderIt = function() {
 					console.time(label);
@@ -349,7 +365,7 @@ var aero = {
 						}
 						
 						if(style != null) {
-							console.log("|   |   Compiling page style: " + stylFile);
+							console.log("| Compiling page style: " + stylFile);
 							page.css = styles.compileStylus(style);
 						}
 					}
