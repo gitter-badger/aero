@@ -9,11 +9,8 @@ global.rootRequire = function(name) {
 
 // Modules
 var
-	fs = require("fs"),
-	spdy = require("spdy"),
 	jade = require("jade"),
-	fse = require("fs-extra"),
-	express = require("express"),
+	fs = require("fs-extra"),
 	compress = require("compression"),
 	objectAssign = require("object-assign");
 
@@ -26,30 +23,31 @@ var
 // Aero
 var aero = {
 	// Express reference
-	express: express,
+	express: require("express"),
 	
-	// Express app
-	app: express(),
+	// Server reference
+	server: require("aero-server"),
 	
-	// Includes all page objects
-	pages: {},
+	// All the JavaScript code for the site
+	js: require("aero-js-manager"),
 	
-	// An array of strings containing all the JavaScript code for the site
-	js: [],
-	
-	// Collection of strings containing all the CSS for the site
-	css: {},
+	// All the CSS code for the site
+	css: require("aero-css-manager"),
 	
 	// Components
 	config: rootRequire("config/config"),
 	watch: require("node-watch"),
-	download: rootRequire("src/download"),
+	download: require("aero-download"),
+	initFavIcon: rootRequire("src/favicon"),
+	
+	// Aero event manager
+	events: new (require("events")).EventEmitter(),
 	
 	// Aero root folder
 	rootPath: path.dirname(module.filename),
 	
-	// Aero event manager
-	events: new (require("events")).EventEmitter(),
+	// Includes all page objects
+	pages: {},
 	
 	// Start
 	start: function(configFile) {
@@ -64,9 +62,10 @@ var aero = {
 		});
 		
 		// When a new style has been found
-		aero.events.on("newStyle", function(stylePath, css) {
-			console.log("Installing style: " + stylePath);
-			aero.css[stylePath] = css;
+		aero.events.on("newStyle", function(name, css) {
+			console.log("Installing style: " + name);
+			
+			aero.css[name] = css;
 			aero.compilePages();
 		});
 		
@@ -100,11 +99,6 @@ var aero = {
 			aero.init();
 		});
 		
-		aero.initFavIcon("favicon.ico");
-		
-		// Gzip
-		aero.app.use(compress());
-		
 		// jQuery
 		aero.loadScriptWithoutCompression(aero.root("cache/scripts/jquery.js"));
 		
@@ -114,33 +108,27 @@ var aero = {
 		aero.loadScript(aero.root("scripts/init.js"));
 	},
 	
-	initFavIcon: function(favIconPath) {
-		fs.exists(favIconPath, function(exists) {
-			if(!exists) {
-				console.warn(colors.warn("favicon.ico doesn't exist in your root directory, please add one!"));
-				return;
-			}
-			
-			// Send icon
-			aero.app.get("/favicon.ico", function(request, response) {
-				response.sendFile(favIconPath, {root: "./"});
-			});
-		});
-	},
-	
 	// Init
 	init: function() {
 		console.log("Initializing Aero");
 		
+		aero.app = aero.express();
 		aero.app.set("x-powered-by", "Aero");
 		
+		// Gzip
+		aero.app.use(compress());
+		
+		// Favicon
+		aero.initFavIcon(aero.app, "favicon.ico");
+		
+		// Cache duration
 		var staticFilesConfig = {
 			maxAge: aero.config.browser.cache.duration
 		};
 		
 		// Static files
 		aero.config.static.forEach(function(filePath) {
-			aero.app.use("/" + filePath, express.static("./" + filePath, staticFilesConfig));
+			aero.app.use("/" + filePath, aero.express.static("./" + filePath, staticFilesConfig));
 		});
 		
 		// Download latest version of Google Analytics
@@ -165,7 +153,12 @@ var aero = {
 			aero.compilePages();
 		});
 		
-		aero.startServer();
+		// HTTP server
+		aero.server.start(aero.app, aero.config.port);
+		
+		// HTTPS server
+		if(typeof aero.config.ssl !== "undefined" && typeof aero.config.ssl.cert !== "undefined")
+			aero.server.startHTTPS(aero.app, aero.config.ssl.port, aero.config.ssl);
 	},
 	
 	loadUserData: function() {
@@ -176,7 +169,7 @@ var aero = {
 			aero.loadStyle(aero.root("cache/styles/google-fonts.css"));
 		
 		// Styles
-		fse.ensureDir(aero.config.stylesPath, function(error) {
+		fs.ensureDir(aero.config.stylesPath, function(error) {
 			if(error)
 				throw error;
 			
@@ -185,7 +178,7 @@ var aero = {
 		});
 		
 		// Scripts
-		fse.ensureDir(aero.config.scriptsPath, function(error) {
+		fs.ensureDir(aero.config.scriptsPath, function(error) {
 			if(error)
 				throw error;
 			
@@ -204,16 +197,18 @@ var aero = {
 	},
 	
 	loadScript: function(filePath) {
-		console.log("Compiling script: " + path.basename(filePath, ".js"));
+		var id = path.basename(filePath, ".js");
+		console.log("Compiling script: " + id);
 		
-		aero.js.push(scripts.compressJSFile(filePath));
-		aero.events.emit("newScript", filePath);
+		aero.js[id] = scripts.compressJSFile(filePath);
+		aero.events.emit("newScript", id);
 	},
 	
 	loadScriptWithoutCompression: function(filePath) {
-		console.log("Loading script: " + path.basename(filePath, ".js"));
+		var id = path.basename(filePath, ".js");
+		console.log("Loading script: " + id);
 		
-		aero.js.push(fs.readFileSync(filePath, "utf8"));
+		aero.js[id] = fs.readFileSync(filePath, "utf8");
 		aero.events.emit("newScript", filePath);
 	},
 	
@@ -224,10 +219,11 @@ var aero = {
 	},
 	
 	loadStyle: function(filePath) {
-		console.log("Compiling style: " + path.basename(filePath, ".styl"));
+		var id = path.basename(filePath, ".styl");
+		console.log("Compiling style: " + id);
 		
 		styles.compileStylusFile(filePath, function(css) {
-			aero.events.emit("newStyle", filePath, css);
+			aero.events.emit("newStyle", id, css);
 			
 			// Watch for changes
 			aero.watch(filePath, function(changedFilePath) {
@@ -277,8 +273,8 @@ var aero = {
 			aero.events.emit("newPage", page.id);
 		});
 		
-		aero.js.push(scripts.compressJS(aero.makePages()));
-		aero.js.push("$(document).ready(function(){aero.setTitle(\"" + aero.config.siteName + "\");$(window).trigger(\"resize\");});");
+		aero.js["aero-pages-js"] = scripts.compressJS(aero.makePages());
+		aero.js["aero-setup-js"] = "$(document).ready(function(){aero.setTitle(\"" + aero.config.siteName + "\");$(window).trigger(\"resize\");});";
 		
 		aero.compilePages();
 		
@@ -320,8 +316,8 @@ var aero = {
 		
 		var params = {
 			siteName: aero.config.siteName,
-			css: Object.keys(aero.css).map(function(v) { return aero.css[v]; }).join(" "),
-			js: aero.js.join(";"),
+			css: aero.css.compile(aero.config.styles),
+			js: aero.js.compile(aero.config.scripts),
 			pages: aero.pages
 		};
 		
@@ -393,7 +389,7 @@ var aero = {
 					console.warn(colors.warn("'%s' doesn't exist yet, automatically creating it"), page.path);
 					
 					// Automatically create a page
-					fse.ensureDir(page.path, function(error) {
+					fs.ensureDir(page.path, function(error) {
 						if(error)
 							throw error;
 						
@@ -426,46 +422,6 @@ var aero = {
 		});
 		
 		return "$(document).ready(function(){" + makePages.join("") + "});";
-	},
-	
-	// Start server
-	startServer: function() {
-		if(typeof aero.config.ssl.key !== "undefined") {
-			try {
-				aero.startSpdyServer();
-			} catch(e) {
-				//console.warn(colors.warn("SSL", e));
-				console.warn("SSL files could not be loaded, ignoring it");
-			}
-		}
-		
-		aero.app.listen(aero.config.port, undefined, undefined, function(error) {
-			if(error) {
-				console.error(colors.error("Couldn't listen on port %d"), aero.config.port);
-				return;
-			}
-			
-			console.log(aero.config.siteName + " started on port " + aero.config.port + " (http)");
-		});
-	},
-	
-	startSpdyServer: function() {
-		var spdyOptions = {
-			key: fs.readFileSync(aero.config.ssl.key),
-			cert: fs.readFileSync(aero.config.ssl.cert),
-			ca: fs.readFileSync(aero.config.ssl.ca),
-			
-			// Server's window size
-			windowSize: 1024 * 1024,
-			
-			// Will the server send 3.1 frames on 3.0 *plain* spdy?
-			autoSpdy31: false
-		};
-		
-		var server = spdy.createServer(spdyOptions, aero.app);
-		server.listen(aero.config.ssl.port);
-		
-		console.log(aero.config.siteName + " started on port " + aero.config.ssl.port + " (https)");
 	},
 	
 	root: function(fileName) {
