@@ -1,24 +1,21 @@
 "use strict";
 
-var path = require("path");
-
-// Require from root directory
-global.rootRequire = function(name) {
-	return require(path.join(__dirname, name));
-};
+// Module directory
+process.env.NODE_PATH = __dirname;
 
 // Modules
 var
-	jade = require("jade"),
 	fs = require("fs-extra"),
+	jade = require("jade"),
+	path = require("path"),
 	compress = require("compression"),
 	objectAssign = require("object-assign");
 
 var
-	styles = rootRequire("src/styles"),
-	colors = rootRequire("config/colors"),
-	pageConfig = rootRequire("config/page"),
-	scripts = rootRequire("src/scripts");
+	styles = require("./src/styles"),
+	scripts = require("./src/scripts"),
+	colors = require("./config/colors"),
+	pageConfig = require("./config/page");
 
 // Aero
 var aero = {
@@ -35,10 +32,10 @@ var aero = {
 	css: require("aero-css-manager"),
 	
 	// Components
-	config: rootRequire("config/config"),
+	config: require("./config/config"),
 	watch: require("node-watch"),
 	download: require("aero-download"),
-	initFavIcon: rootRequire("src/favicon"),
+	initFavIcon: require("./src/favicon"),
 	
 	// Aero event manager
 	events: new (require("events")).EventEmitter(),
@@ -100,12 +97,12 @@ var aero = {
 		});
 		
 		// jQuery
-		aero.loadScriptWithoutCompression(aero.root("cache/scripts/jquery.js"));
+		aero.loadScript("jquery", aero.root("cache/scripts/jquery.js"), false);
 		
 		// Compress these
-		aero.loadScript(aero.root("scripts/helpers.js"));
-		aero.loadScript(aero.root("scripts/aero.js"));
-		aero.loadScript(aero.root("scripts/init.js"));
+		aero.loadScript("aero-helpers", aero.root("scripts/helpers.js"));
+		aero.loadScript("aero-main", aero.root("scripts/aero.js"));
+		aero.loadScript("aero-init", aero.root("scripts/init.js"));
 	},
 	
 	// Init
@@ -133,7 +130,7 @@ var aero = {
 		
 		// Download latest version of Google Analytics
 		aero.download("http://www.google-analytics.com/analytics.js", aero.root("cache/scripts/analytics.js"), function() {
-			aero.loadScriptWithoutCompression(aero.root("cache/scripts/analytics.js"));
+			aero.loadScript("google-analytics", aero.root("cache/scripts/analytics.js"), false);
 			
 			if(aero.config.fonts.length > 0)
 				aero.download("http://fonts.googleapis.com/css?family=" + aero.config.fonts.join("|"), aero.root("cache/styles/google-fonts.css"), aero.loadAndStart);
@@ -192,30 +189,21 @@ var aero = {
 	
 	loadUserScripts: function() {
 		aero.config.scripts.forEach(function(fileName) {
-			aero.loadScript(path.join(aero.config.scriptsPath, fileName + ".js"));
+			aero.loadScript(fileName, path.join(aero.config.scriptsPath, fileName + ".js"));
 		});
-	},
-	
-	loadScript: function(filePath) {
-		var id = path.basename(filePath, ".js");
-		console.log("Compiling script: " + id);
-		
-		aero.js[id] = scripts.compressJSFile(filePath);
-		aero.events.emit("newScript", id);
-	},
-	
-	loadScriptWithoutCompression: function(filePath) {
-		var id = path.basename(filePath, ".js");
-		console.log("Loading script: " + id);
-		
-		aero.js[id] = fs.readFileSync(filePath, "utf8");
-		aero.events.emit("newScript", filePath);
 	},
 	
 	loadUserStyles: function() {
 		aero.config.styles.forEach(function(fileName) {
 			aero.loadStyle(path.join(aero.config.stylesPath, fileName + ".styl"));
 		});
+	},
+	
+	loadScript: function(id, filePath, compressionEnabled) {
+		console.log("Compiling script: " + id);
+		
+		aero.js[id] = compressionEnabled ? scripts.compressJSFile(filePath) : fs.readFileSync(filePath, "utf8");
+		aero.events.emit("newScript", id);
 	},
 	
 	loadStyle: function(filePath) {
@@ -317,7 +305,7 @@ var aero = {
 		var params = {
 			siteName: aero.config.siteName,
 			css: aero.css.compile(["reset", "google-fonts.css"].concat(aero.config.styles)),
-			js: aero.js.compile(["jquery", "helpers", "aero", "init", "analytics"].concat(aero.config.scripts).concat(["aero-pages-js", "aero-setup-js"])),
+			js: aero.js.compile(["jquery", "aero-helpers", "aero-main", "aero-init", "google-analytics"].concat(aero.config.scripts).concat(["aero-pages-js", "aero-setup-js"])),
 			pages: aero.pages
 		};
 		
@@ -426,9 +414,9 @@ var aero = {
 	
 	root: function(fileName) {
 		if(typeof fileName === "undefined")
-			return aero.rootPath;
+			return this.rootPath;
 		
-		return path.join(aero.rootPath, fileName);
+		return path.join(this.rootPath, fileName);
 	}
 };
 
