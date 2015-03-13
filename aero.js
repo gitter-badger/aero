@@ -372,6 +372,12 @@ var aero = {
 				try {
 					renderIt();
 				} catch(e) {
+					// Rendering error?
+					if(!(e instanceof Error) || e.code !== "ENOENT") {
+						console.error(colors.error(e));
+						return;
+					}
+					
 					console.warn(colors.warn("'%s' doesn't exist yet, automatically creating it"), page.path);
 					
 					// Automatically create a page
