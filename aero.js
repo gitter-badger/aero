@@ -262,7 +262,7 @@ var aero = {
 		});
 		
 		aero.js["aero-pages-js"] = scripts.compressJS(aero.makePages());
-		aero.js["aero-setup-js"] = "$(document).ready(function(){aero.setTitle(\"" + aero.config.siteName + "\");$(window).trigger(\"resize\");});";
+		aero.js["aero-setup-js"] = "$(document).ready(function(){aero.setTitle(\"" + aero.config.siteName + "\");});";
 		
 		aero.compilePages();
 		
@@ -305,7 +305,7 @@ var aero = {
 		var params = {
 			siteName: aero.config.siteName,
 			css: aero.css.compile(["reset", "google-fonts.css"].concat(aero.config.styles)),
-			js: aero.js.compile(["jquery", "aero-helpers", "aero-main", "aero-init", "google-analytics"].concat(aero.config.scripts).concat(["aero-pages-js", "aero-setup-js"])),
+			js: aero.js.compile(["jquery", "aero-helpers", "aero-main", "aero-init", "google-analytics", "aero-pages-js", "aero-setup-js"].concat(aero.config.scripts)),
 			pages: aero.pages
 		};
 		
