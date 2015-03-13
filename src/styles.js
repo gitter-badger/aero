@@ -3,7 +3,7 @@
 var fs = require("fs");
 var nib = require("nib");
 var stylus = require("stylus");
-var colors = require("../../config/colors");
+var colors = rootRequire("config/colors");
 
 var styles = {
 	compileStylus: function(style) {

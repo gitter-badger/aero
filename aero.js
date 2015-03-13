@@ -1,5 +1,10 @@
 "use strict";
 
+// Require from root directory
+global.rootRequire = function(name) {
+	return require(__dirname + "/" + name);
+};
+
 // Modules
 var
 	fs = require("fs"),
@@ -9,11 +14,11 @@ var
 	fse = require("fs-extra"),
 	express = require("express"),
 	compress = require("compression"),
-	colors = require("./config/colors"),
-	pageConfig = require("./config/page"),
+	colors = rootRequire("config/colors"),
+	pageConfig = rootRequire("config/page"),
 	objectAssign = require("object-assign"),
-	styles = require("./src/manager/styles"),
-	scripts = require("./src/manager/scripts");
+	styles = rootRequire("src/styles"),
+	scripts = rootRequire("src/scripts");
 
 // Aero
 var aero = {
@@ -33,9 +38,9 @@ var aero = {
 	css: {},
 	
 	// Components
-	config: require("./config/config"),
+	config: rootRequire("config/config"),
 	watch: require("node-watch"),
-	download: require("./src/download"),
+	download: rootRequire("src/download"),
 	
 	// Aero root folder
 	rootPath: path.dirname(module.filename),
@@ -146,9 +151,7 @@ var aero = {
 	},
 	
 	loadAndStart: function() {
-		if(!aero.loadUserData()) {
-			aero.loadAdminInterface();
-		}
+		aero.loadUserData();
 		
 		if(aero.config.pages.length === 0)
 			console.warn(colors.warn("No pages yet, consider adding \"pages\": [\"helloworld\"] to your config.json"));
@@ -188,9 +191,6 @@ var aero = {
 			// Load pages
 			aero.loadPages();
 		});
-		
-		// Pages
-		return true;
 	},
 	
 	loadUserScripts: function() {
@@ -327,7 +327,7 @@ var aero = {
 			page.layoutCode = "";
 			
 			page.compile = function(compileStyle) {
-				var label = "Compiling page: " + this.id;
+				var label = "|   Compiling page: " + this.id;
 				
 				var renderIt = function() {
 					console.time(label);
@@ -344,7 +344,7 @@ var aero = {
 						}
 						
 						if(style != null) {
-							console.log("|   Compiling page style: " + stylFile);
+							console.log("|   |   Compiling page style: " + stylFile);
 							page.css = styles.compileStylus(style);
 						}
 					}
@@ -402,17 +402,6 @@ var aero = {
 			
 			page.compile(true);
 		});
-	},
-	
-	loadAdminInterface: function() {
-		/*console.log("Loading admin interface");
-		
-		aero.loadPages(aero.root("./pages"));
-		
-		aero.app.get("/", function(request, response) {
-			response.writeHead(302, {'Location': '/admin'});
-			response.end();
-		});*/
 	},
 	
 	makePages: function() {
