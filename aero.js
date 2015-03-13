@@ -97,20 +97,7 @@ var aero = {
 			aero.init();
 		});
 		
-		// Favicon
-		var favIconPath = "favicon.ico";
-		
-		fs.exists(favIconPath, function(exists) {
-			if(!exists) {
-				console.warn(colors.warn("favicon.ico doesn't exist in your root directory, please add one!"));
-				return;
-			}
-			
-			// Send icon
-			aero.app.get("/favicon.ico", function(request, response) {
-				response.sendFile(favIconPath, {root: "./"});
-			});
-		});
+		aero.initFavIcon("favicon.ico");
 		
 		// Gzip
 		aero.app.use(compress());
@@ -122,6 +109,20 @@ var aero = {
 		aero.loadScript(aero.root("scripts/helpers.js"));
 		aero.loadScript(aero.root("scripts/aero.js"));
 		aero.loadScript(aero.root("scripts/init.js"));
+	},
+	
+	initFavIcon: function(favIconPath) {
+		fs.exists(favIconPath, function(exists) {
+			if(!exists) {
+				console.warn(colors.warn("favicon.ico doesn't exist in your root directory, please add one!"));
+				return;
+			}
+			
+			// Send icon
+			aero.app.get("/favicon.ico", function(request, response) {
+				response.sendFile(favIconPath, {root: "./"});
+			});
+		});
 	},
 	
 	// Init
@@ -289,9 +290,12 @@ var aero = {
 			});
 			
 			// Set up full response with cached output
-			aero.app.get("/" + page.url, function(request, response) {
+			aero.app.all("/" + page.url, function(request, response) {
 				response.header("Content-Type", "text/html; charset=utf-8");
-				response.end(page.layoutCode);
+				if(page.static)
+					response.end(page.layoutCode);
+				else
+					page.render(response);
 			});
 			
 			// Watch directory
@@ -326,6 +330,20 @@ var aero = {
 			page.code = "";
 			page.layoutCode = "";
 			
+			page.renderLayout = function() {
+				// Parameter: page
+				params.page = page;
+				
+				// We MUST save this in a local variable
+				page.code = styles.scoped(page.css) + page.render(params);
+				
+				// Parameter: content
+				params.content = page.code;
+				
+				// Render Jade file to HTML
+				return renderLayout(params);
+			};
+			
 			page.compile = function(compileStyle) {
 				var label = "|   Compiling page: " + this.id;
 				
@@ -352,19 +370,10 @@ var aero = {
 					// Template
 					page.templatePath = path.join(page.path, page.id + ".jade");
 					
-					var renderPage = jade.compileFile(page.templatePath);
+					page.render = jade.compileFile(page.templatePath);
 					
-					// Parameter: page
-					params.page = page;
-					
-					// We MUST save this in a local variable
-					page.code = styles.scoped(page.css) + renderPage(params);
-					
-					// Parameter: content
-					params.content = page.code;
-					
-					// Render Jade file to HTML
-					page.layoutCode = renderLayout(params);
+					if(page.static)
+						page.layoutCode = page.renderLayout();
 					
 					console.timeEnd(label);
 				};

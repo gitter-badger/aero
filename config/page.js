@@ -3,7 +3,8 @@ module.exports = function(pageName) {
 		title: pageName.capitalize(),
 		url: pageName,
 		id: pageName,
-		visible: true
+		visible: true,
+		static: true
 	};
 }
 
