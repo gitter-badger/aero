@@ -23,8 +23,8 @@ var styles = {
 	},
 	
 	compileStylusFile: function(filePath, callBack) {
-		var createStylusFile = function(filePath, data) {
-			console.warn(colors.warn("Couldn't find style sheet '" + filePath + "', creating empty one"));
+		var createStylusFile = function(stylusPath, data) {
+			console.warn(colors.warn("Couldn't find style sheet '" + stylusPath + "', creating empty one"));
 			
 			fs.writeFile(filePath, data);
 		};
@@ -40,19 +40,19 @@ var styles = {
 				callBack(styles.compileStylus(data));
 			});
 			
-			return;
+			return "";
 		}
 		
 		// Sync
-		var data = "";
+		var contents = "";
 		
 		try {
-			data = fs.readFileSync(filePath, "utf8");
+			contents = fs.readFileSync(filePath, "utf8");
 		} catch(e) {
-			createStylusFile(filePath, data);
+			createStylusFile(filePath, contents);
 		}
 		
-		return this.compileStylus(data);
+		return this.compileStylus(contents);
 	},
 	
 	scoped: function(css) {
