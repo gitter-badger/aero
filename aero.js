@@ -1,23 +1,26 @@
 "use strict";
 
+var path = require("path");
+
 // Require from root directory
 global.rootRequire = function(name) {
-	return require(__dirname + "/" + name);
+	return require(path.join(__dirname, name));
 };
 
 // Modules
 var
 	fs = require("fs"),
 	spdy = require("spdy"),
-	path = require("path"),
 	jade = require("jade"),
 	fse = require("fs-extra"),
 	express = require("express"),
 	compress = require("compression"),
+	objectAssign = require("object-assign");
+
+var
+	styles = rootRequire("src/styles"),
 	colors = rootRequire("config/colors"),
 	pageConfig = rootRequire("config/page"),
-	objectAssign = require("object-assign"),
-	styles = rootRequire("src/styles"),
 	scripts = rootRequire("src/scripts");
 
 // Aero
@@ -302,7 +305,7 @@ var aero = {
 			aero.watch(page.path, function(filePath) {
 				try {
 					console.log("File changed:", filePath);
-					page.compile(path.extname(filePath) == ".styl");
+					page.compile(path.extname(filePath) === ".styl");
 				} catch(e) {
 					console.error(e);
 				}
