@@ -83,6 +83,12 @@ Aero page components are grouped by feature, not by file type like most MVC fram
 
 Now try to change the `helloworld.jade` inside your `pages` directory. Aero notices the changes and recompiles the file automatically.
 
+## Documentation
+
+You've barely scratched the surface of what Aero can do with the Hello World example.
+
+	TODO: Tutorial
+
 ## Websites using Aero
 
 * http://blitzprog.org/ ([Source](https://github.com/blitzprog/blitzprog.org))
