@@ -3,5 +3,8 @@
 		"node": false,
 		"browser": true,
 		"jquery": true
-	}
+	},
+	"rules": {
+		"strict": 0,
+	},
 }

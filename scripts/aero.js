@@ -1,5 +1,3 @@
-"use strict";
-
 var aero = {
 	cache: [],
 	originalPath: window.location.pathname,
@@ -9,7 +7,7 @@ var aero = {
 	baseTitle: "",
 	titleSeparator: " - ",
 	fadingEnabled: true,
-	fadeSpeed: 150,
+	fadeSpeed: 300,
 	pageURL: "/raw{url}",
 	pathPrefix: "/",
 	publicURLToPage: {},
