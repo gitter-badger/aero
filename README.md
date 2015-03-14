@@ -69,11 +69,15 @@ Add a main layout file `layout.jade` in your root directory:
 
 `siteName` is the title you set up in your config before. The variables `css`, `js` and `content` are set by Aero.
 
+Install Aero:
+
+	npm install aero --save
+
 Now run it using:
 
 	node index.js
 
-This should automatically create the `pages/helloworld/helloworld.jade` file and start your server on port 4000. Navigate your browser to http://localhost:4000/helloworld to see the rendered page.
+This should automatically create the `pages/helloworld/helloworld.jade` file and start your server on port 4000. Navigate your browser to [http://localhost:4000/helloworld](http://localhost:4000/helloworld) to see the "helloworld" from your automatically created page rendered into your layout.
 
 Now try to change the `helloworld.jade` inside your `pages` directory. Aero notices the changes and recompiles the file automatically.
 
