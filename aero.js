@@ -214,6 +214,9 @@ var aero = {
 	},
 	
 	loadScript: function(id, filePath, compressionEnabled) {
+		if(typeof compressionEnabled === "undefined")
+			compressionEnabled = true;
+		
 		console.log("Compiling script: " + id);
 		
 		aero.js[id] = compressionEnabled ? scripts.compressJSFile(filePath) : fs.readFileSync(filePath, "utf8");
