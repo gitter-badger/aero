@@ -79,6 +79,8 @@ Now run it using:
 
 This should automatically create the `pages/helloworld/helloworld.jade` file and start your server on port 4000. Navigate your browser to [http://localhost:4000/helloworld](http://localhost:4000/helloworld) to see the "helloworld" from your automatically created page rendered into your layout.
 
+Aero page components are grouped by feature, not by file type like most MVC frameworks. For example the `helloworld` page can contain a `helloworld.jade`, `helloworld.styl`, `helloworld.json` and a `helloworld.js` file all in the same directory. We believe that grouping by feature eases the maintenance of any kind of project.
+
 Now try to change the `helloworld.jade` inside your `pages` directory. Aero notices the changes and recompiles the file automatically.
 
 ## Websites using Aero
