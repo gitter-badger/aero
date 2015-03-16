@@ -6,7 +6,8 @@ var
 	jade = require("jade"),
 	path = require("path"),
 	compress = require("compression"),
-	objectAssign = require("object-assign");
+	merge = require("object-assign"),
+	bodyParser = require("body-parser");
 
 var
 	styles = require("./src/styles"),
@@ -90,6 +91,11 @@ var aero = {
 		aero.app = aero.express();
 		aero.app.set("x-powered-by", "Aero");
 		
+		// Body parsers
+		aero.urlEncodedParser = bodyParser.urlencoded({
+			extended: false
+		});
+		
 		// Gzip
 		aero.app.use(compress());
 		
@@ -158,7 +164,7 @@ var aero = {
 					var userConfig = JSON.parse(data);
 					
 					// Merge config file
-					aero.config = objectAssign(aero.config, userConfig);
+					aero.config = merge(aero.config, userConfig);
 				} catch(jsonError) {
 					if(jsonError instanceof SyntaxError) {
 						console.error(colors.error("There's a syntax error in " + configFile + ",", jsonError));
@@ -271,7 +277,7 @@ var aero = {
 			
 			// Merge
 			if(pageJSON != null)
-				page = objectAssign(page, JSON.parse(pageJSON));
+				page = merge(page, JSON.parse(pageJSON));
 			
 			return page;
 		});
@@ -292,17 +298,35 @@ var aero = {
 			// Set up raw response with cached output
 			aero.app.get("/raw/" + page.url, function(request, response) {
 				response.header("Content-Type", "text/html; charset=utf-8");
-				response.end(page.code);
+				
+				if(page.static) {
+					response.end(page.code);
+				} else {
+					response.end(page.render({
+						post: request.body
+					}));
+				}
 			});
 			
-			// Set up full response with cached output
-			aero.app.all("/" + page.url, function(request, response) {
-				response.header("Content-Type", "text/html; charset=utf-8");
-				if(page.static)
+			// Response header
+			var contentType = "text/html; charset=utf-8";
+			
+			// Static or dynamic?
+			if(page.static) {
+				// Static pages have maximum performance, just output the code we rendered before
+				aero.app.get("/" + page.url, function(request, response) {
+					response.header("Content-Type", contentType);
 					response.end(page.layoutCode);
-				else
-					page.render(response);
-			});
+				});
+			} else {
+				// Dynamic pages render the layout again without having to reload it from the FS
+				aero.app.all("/" + page.url, aero.urlEncodedParser, function(request, response) {
+					response.header("Content-Type", contentType);
+					response.end(page.renderWithLayout({
+						post: request.body
+					}));
+				});
+			}
 			
 			// Watch directory
 			aero.watch(page.path, function(filePath) {
@@ -321,13 +345,6 @@ var aero = {
 	compilePages: function() {
 		var renderLayout = jade.compileFile(aero.config.layoutPath);
 		
-		var params = {
-			siteName: aero.config.siteName,
-			css: aero.css.compile(["aero-reset", "aero-fonts"].concat(aero.config.styles)),
-			js: aero.js.compile(["jquery", "aero-helpers", "aero-main", "aero-init", "google-analytics", "aero-pages-js", "aero-setup-js"].concat(aero.config.scripts)),
-			pages: aero.pages
-		};
-		
 		// Compile jade files
 		Object.keys(aero.pages).forEach(function(pageId) {
 			var page = aero.pages[pageId];
@@ -336,12 +353,34 @@ var aero = {
 			page.code = "";
 			page.layoutCode = "";
 			
-			page.renderLayout = function() {
+			page.render = function(additionalParams) {
+				var params = {
+					siteName: aero.config.siteName,
+					pages: aero.pages
+				};
+				
+				if(typeof additionalParams !== "undefined")
+					params = merge(params, additionalParams);
+				
+				return styles.scoped(page.css) + page.renderJade(params);
+			};
+			
+			page.renderWithLayout = function(additionalParams) {
+				var params = {
+					siteName: aero.config.siteName,
+					pages: aero.pages,
+					css: aero.css.compile(["aero-reset", "aero-fonts"].concat(aero.config.styles)),
+					js: aero.js.compile(["jquery", "aero-helpers", "aero-main", "aero-init", "google-analytics", "aero-pages-js", "aero-setup-js"].concat(aero.config.scripts))
+				};
+				
+				if(typeof additionalParams !== "undefined")
+					params = merge(params, additionalParams);
+				
 				// Parameter: page
 				params.page = page;
 				
 				// We MUST save this in a local variable
-				page.code = styles.scoped(page.css) + page.render(params);
+				page.code = page.render(additionalParams);
 				
 				// Parameter: content
 				params.content = page.code;
@@ -376,10 +415,10 @@ var aero = {
 					// Template
 					page.templatePath = path.join(page.path, page.id + ".jade");
 					
-					page.render = jade.compileFile(page.templatePath);
+					page.renderJade = jade.compileFile(page.templatePath);
 					
 					if(page.static)
-						page.layoutCode = page.renderLayout();
+						page.layoutCode = page.renderWithLayout();
 					
 					console.timeEnd(label);
 				};

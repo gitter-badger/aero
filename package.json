@@ -12,6 +12,7 @@
 		"jade": "*",
 		"stylus": "*",
 		"nib": "*",
+		"body-parser": "*",
 		"object-assign": "*",
 		"compression": "*",
 		"uglify-js": "*",
