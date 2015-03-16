@@ -320,12 +320,22 @@ var aero = {
 				});
 			} else {
 				// Dynamic pages render the layout again without having to reload it from the FS
-				aero.app.all("/" + page.url, aero.urlEncodedParser, function(request, response) {
-					response.header("Content-Type", contentType);
-					response.end(page.renderWithLayout({
-						post: request.body
-					}));
-				});
+				
+				// GET
+				if(typeof page.controller.get !== "undefined") {
+					aero.app.get("/" + page.url, function(request, response) {
+						response.header("Content-Type", contentType);
+						response.end(page.renderWithLayout(page.controller.get(request.query)));
+					});
+				}
+				
+				// POST
+				if(typeof page.controller.post !== "undefined") {
+					aero.app.post("/" + page.url, aero.urlEncodedParser, function(request, response) {
+						response.header("Content-Type", contentType);
+						response.end(page.renderWithLayout(page.controller.post(request.body)));
+					});
+				}
 			}
 			
 			// Watch directory
@@ -352,6 +362,18 @@ var aero = {
 			page.path = path.join(aero.config.pagesPath, page.id);
 			page.code = "";
 			page.layoutCode = "";
+			
+			try {
+				page.controller = require(path.resolve(path.join(page.path, page.id + ".js")));
+				page.static = false;
+			} catch(e) {
+				if(e.code === "MODULE_NOT_FOUND") {
+					page.controller = undefined;
+					page.static = true;
+				} else {
+					throw e;
+				}
+			}
 			
 			page.render = function(additionalParams) {
 				var params = {
