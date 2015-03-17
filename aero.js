@@ -449,7 +449,7 @@ var aero = {
 					renderIt();
 				} catch(e) {
 					// Rendering error?
-					if(!(e instanceof Error) || e.code !== "ENOENT") {
+					if(!(e instanceof Error) || e.code !== "ENOENT" || e.toString().indexOf("no such file or directory '" + page.templatePath + "'") === -1) {
 						console.error(colors.error(e));
 						return;
 					}
