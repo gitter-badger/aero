@@ -17,8 +17,8 @@ var
 
 // Aero
 var aero = {
-	// Express reference
-	express: require("express"),
+	// Express and app reference set at the same time
+	app: (this.express = require("express"))(),
 	
 	// Server reference
 	server: require("aero-server"),
@@ -88,7 +88,6 @@ var aero = {
 	init: function() {
 		console.log("Initializing Aero");
 		
-		aero.app = aero.express();
 		aero.app.set("x-powered-by", "Aero");
 		
 		// Body parsers
