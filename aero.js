@@ -7,6 +7,7 @@ var
 	path = require("path"),
 	compress = require("compression"),
 	merge = require("object-assign"),
+	express = require("express"),
 	bodyParser = require("body-parser");
 
 var
@@ -17,8 +18,11 @@ var
 
 // Aero
 var aero = {
-	// Express and app reference set at the same time
-	app: (this.express = require("express"))(),
+	// App reference
+	app: express(),
+	
+	// Express reference
+	express: express,
 	
 	// Server reference
 	server: require("aero-server"),
@@ -352,7 +356,17 @@ var aero = {
 	},
 	
 	compilePages: function() {
-		var renderLayout = jade.compileFile(aero.config.layoutPath);
+		var renderLayout = function() {
+			return "";
+		};
+		
+		try {
+			renderLayout = jade.compileFile(aero.config.layoutPath);
+		} catch(e) {
+			if(e.code === "ENOENT")
+				console.error(colors.error("You should add a layout " + aero.config.layoutPath + " !"));
+		}
+		
 		
 		// Compile jade files
 		Object.keys(aero.pages).forEach(function(pageId) {
