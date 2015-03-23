@@ -54,7 +54,7 @@ var aero = {
 	
 			// Scroll
 			if(aero.$navigation.offset().top < 0)
-				this.scrollToElement(this.$navigation);
+				aero.scrollToElement(aero.$navigation);
 			
 			// Load page
 			var $this = $(this);
