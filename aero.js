@@ -143,6 +143,9 @@ var aero = {
 		// HTTPS server
 		if(typeof aero.config.ssl !== "undefined" && typeof aero.config.ssl.cert !== "undefined")
 			aero.server.startHTTPS(aero.app, aero.config.ssl.port, aero.config.ssl);
+			
+		// Event
+		aero.events.emit("initialized");
 	},
 	
 	loadConfig: function(configFile) {
