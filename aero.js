@@ -308,9 +308,7 @@ var aero = {
 				if(page.static) {
 					response.end(page.code);
 				} else {
-					response.end(page.render({
-						post: request.body
-					}));
+					response.end(page.render(page.controller.get(request)));
 				}
 			});
 			
@@ -331,7 +329,7 @@ var aero = {
 				if(typeof page.controller.get !== "undefined") {
 					aero.app.get("/" + page.url, function(request, response) {
 						response.header("Content-Type", contentType);
-						response.end(page.renderWithLayout(page.controller.get(request.query)));
+						response.end(page.renderWithLayout(page.controller.get(request)));
 					});
 				}
 				
@@ -339,7 +337,7 @@ var aero = {
 				if(typeof page.controller.post !== "undefined") {
 					aero.app.post("/" + page.url, aero.urlEncodedParser, function(request, response) {
 						response.header("Content-Type", contentType);
-						response.end(page.renderWithLayout(page.controller.post(request.body)));
+						response.end(page.renderWithLayout(page.controller.post(request)));
 					});
 				}
 			}
