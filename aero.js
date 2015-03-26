@@ -310,19 +310,32 @@ var aero = {
 		Object.keys(aero.pages).forEach(function(pageId) {
 			var page = aero.pages[pageId];
 			
-			// Set up raw response with cached output
-			aero.app.get("/raw/" + page.url, function(request, response) {
-				response.header("Content-Type", "text/html; charset=utf-8");
-				
-				if(page.static) {
-					response.end(page.code);
-				} else {
-					response.end(page.render(page.controller.get(request)));
-				}
-			});
-			
 			// Response header
 			var contentType = "text/html; charset=utf-8";
+			
+			// Set up raw response with cached output
+			if(page.static) {
+				aero.app.get("/raw/" + page.url, function(request, response) {
+					response.header("Content-Type", contentType);
+					response.end(page.code);
+				});
+			} else {
+				// GET
+				if(typeof page.controller.get !== "undefined") {
+					aero.app.get("/raw/" + page.url, function(request, response) {
+						response.header("Content-Type", contentType);
+						response.end(page.render(page.controller.get(request)));
+					});
+				}
+				
+				// POST
+				if(typeof page.controller.post !== "undefined") {
+					aero.app.post("/raw/" + page.url, aero.urlEncodedParser, function(request, response) {
+						response.header("Content-Type", contentType);
+						response.end(page.render(page.controller.post(request)));
+					});
+				}
+			}
 			
 			// Static or dynamic?
 			if(page.static) {
