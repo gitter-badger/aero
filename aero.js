@@ -10,6 +10,7 @@ var
 	express = require("express"),
 	bodyParser = require("body-parser");
 
+// Local
 var
 	styles = require("./src/styles"),
 	scripts = require("./src/scripts"),
@@ -126,6 +127,7 @@ var aero = {
 		});
 	},
 	
+	// Load and start
 	loadAndStart: function() {
 		aero.loadUserData();
 		
@@ -148,6 +150,7 @@ var aero = {
 		aero.events.emit("initialized");
 	},
 	
+	// Load config
 	loadConfig: function(configFile) {
 		if(typeof configFile === "undefined")
 			configFile = "config.json";
@@ -184,6 +187,7 @@ var aero = {
 		});
 	},
 	
+	// Load user data
 	loadUserData: function() {
 		// CSS reset
 		aero.loadStyle("aero-reset", aero.root("styles/reset.styl"));
@@ -213,18 +217,21 @@ var aero = {
 		});
 	},
 	
+	// Load user scripts
 	loadUserScripts: function() {
 		aero.config.scripts.forEach(function(fileName) {
 			aero.loadScript(fileName, path.join(aero.config.scriptsPath, fileName + ".js"));
 		});
 	},
 	
+	// Load user styles
 	loadUserStyles: function() {
 		aero.config.styles.forEach(function(fileName) {
 			aero.loadStyle(fileName, path.join(aero.config.stylesPath, fileName + ".styl"));
 		});
 	},
 	
+	// Load script
 	loadScript: function(id, filePath, compressionEnabled) {
 		if(typeof compressionEnabled === "undefined")
 			compressionEnabled = true;
@@ -235,6 +242,7 @@ var aero = {
 		aero.events.emit("newScript", id);
 	},
 	
+	// Load style
 	loadStyle: function(id, filePath) {
 		console.log("Compiling style: " + id);
 		
@@ -252,6 +260,7 @@ var aero = {
 		});
 	},
 	
+	// Load pages
 	loadPages: function(pagesPath) {
 		if(typeof pagesPath === "undefined")
 			pagesPath = aero.config.pagesPath;
@@ -356,6 +365,7 @@ var aero = {
 		return true;
 	},
 	
+	// Compile pages
 	compilePages: function() {
 		var renderLayout = function() {
 			return "";
@@ -494,6 +504,7 @@ var aero = {
 		});
 	},
 	
+	// Make pages
 	makePages: function() {
 		var makePages = [];
 		
@@ -506,6 +517,7 @@ var aero = {
 		return "$(document).ready(function(){" + makePages.join("") + "});";
 	},
 	
+	// Root
 	root: function(fileName) {
 		if(typeof fileName === "undefined")
 			return this.rootPath;
