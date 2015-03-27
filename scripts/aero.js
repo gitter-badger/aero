@@ -1,5 +1,6 @@
 var aero = {
 	cache: [],
+	cacheEnabled: true,
 	originalPath: window.location.pathname,
 	stateObj: {publicURL: window.location.pathname},
 	poppingState: false,
@@ -119,7 +120,7 @@ var aero = {
 		// Cached version
 		var url = page.path + "?params=" + params;
 	
-		if(url in aero.cache) {
+		if(aero.cacheEnabled && url in aero.cache) {
 			var html = aero.cache[url];
 			
 			// Loading animation
@@ -161,7 +162,8 @@ var aero = {
 			aero.$content.promise().done(function() {
 				aero.$content.html(data).fadeIn(aero.fadeSpeed, function() {
 					// Cache the page
-					aero.cache[url] = data;
+					if(aero.cacheEnabled)
+						aero.cache[url] = data;
 		
 					// Ajaxify links
 					aero.ajaxifyLinks();

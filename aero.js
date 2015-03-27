@@ -375,7 +375,15 @@ var aero = {
 							break;
 							
 						case ".js":
+							// In any case we reload the page controller because we don't know
+							// if the JS file is used in the controller or in the browser.
 							page.reloadController();
+							
+							// If it wasn't the page controller we need to recompile the page
+							// because the JavaScript file might have been a browser based one.
+							if(page.controllerPath.indexOf(filePath) === -1)
+								page.compile(false);
+							
 							break;
 							
 						default:
@@ -410,18 +418,18 @@ var aero = {
 			var page = aero.pages[pageId];
 			
 			page.path = path.join(aero.config.pagesPath, page.id);
+			page.controllerPath = path.resolve(path.join(page.path, page.id + ".js"));
 			page.code = "";
 			page.layoutCode = "";
 			
 			page.reloadController = function() {
-				var controllerPath = path.resolve(path.join(page.path, page.id + ".js"));
 				console.log("| Loading controller: " + page.id);
 				
 				// Delete cached module
-				delete require.cache[controllerPath];
+				delete require.cache[page.controllerPath];
 				
 				// Reload it
-				page.controller = require(controllerPath);
+				page.controller = require(page.controllerPath);
 			};
 			
 			try {
