@@ -368,7 +368,20 @@ var aero = {
 			aero.watch(page.path, function(filePath) {
 				try {
 					console.log("File changed:", filePath);
-					page.compile(path.extname(filePath) === ".styl");
+					
+					switch(path.extname(filePath)) {
+						case ".styl":
+							page.compile(true);
+							break;
+							
+						case ".js":
+							page.reloadController();
+							break;
+							
+						default:
+							page.compile(false);
+							break;
+					}
 				} catch(e) {
 					console.error(e);
 				}
@@ -400,8 +413,19 @@ var aero = {
 			page.code = "";
 			page.layoutCode = "";
 			
+			page.reloadController = function() {
+				var controllerPath = path.resolve(path.join(page.path, page.id + ".js"));
+				console.log("| Loading controller: " + page.id);
+				
+				// Delete cached module
+				delete require.cache[controllerPath];
+				
+				// Reload it
+				page.controller = require(controllerPath);
+			};
+			
 			try {
-				page.controller = require(path.resolve(path.join(page.path, page.id + ".js")));
+				page.reloadController();
 				page.static = false;
 			} catch(e) {
 				if(e.code === "MODULE_NOT_FOUND") {
