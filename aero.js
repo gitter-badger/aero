@@ -406,7 +406,7 @@ var aero = {
 		};
 		
 		try {
-			renderLayout = jade.compileFile(aero.config.layoutPath);
+			renderLayout = jade.compileFile(path.join(aero.config.layoutPath, path.basename(aero.config.layoutPath) + ".jade"));
 		} catch(e) {
 			if(e.code === "ENOENT")
 				console.error(colors.error("You should add a layout " + aero.config.layoutPath + " !"));
