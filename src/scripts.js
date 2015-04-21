@@ -6,12 +6,14 @@ var UglifyJS = require("uglify-js");
 var scripts = {
 	compressor: new UglifyJS.Compressor(),
 	
+	// CompressJS
 	compressJS: function(code) {
 		var ast = UglifyJS.parse(code);
 		ast.figure_out_scope();
 		return ast.transform(this.compressor).print_to_string();
 	},
 	
+	// CompressJSFile
 	compressJSFile: function(filePath) {
 		var data = "";
 		

@@ -420,7 +420,6 @@ var aero = {
 				console.error(colors.error("You should add a layout " + aero.config.layoutPath + " !"));
 		}
 		
-		
 		// Compile jade files
 		Object.keys(aero.pages).forEach(function(pageId) {
 			var page = aero.pages[pageId];
