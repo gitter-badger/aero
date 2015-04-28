@@ -202,6 +202,12 @@ var aero = {
 			
 			// Load styles
 			aero.loadUserStyles();
+			
+			// Watch for changes
+			aero.watch(aero.config.stylesPath, function(changedFilePath) {
+				console.log("Style changed:", changedFilePath);
+				aero.loadUserStyles();
+			});
 		});
 		
 		// Scripts
@@ -254,10 +260,10 @@ var aero = {
 		
 		recompileStyle();
 		
-		aero.watch(filePath, function(changedFilePath) {
+		/*aero.watch(filePath, function(changedFilePath) {
 			console.log("Style changed:", changedFilePath);
 			recompileStyle();
-		});
+		});*/
 	},
 	
 	// Load pages
