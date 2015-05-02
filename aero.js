@@ -1,7 +1,7 @@
 "use strict";
 
 // Modules
-var
+let
 	fs = require("fs-extra"),
 	jade = require("jade"),
 	path = require("path"),
@@ -11,14 +11,14 @@ var
 	bodyParser = require("body-parser");
 
 // Local
-var
+let
 	styles = require("./src/styles"),
 	scripts = require("./src/scripts"),
 	colors = require("./config/colors"),
 	pageConfig = require("./config/page");
 
 // Aero
-var aero = {
+let aero = {
 	// App reference
 	app: express(),
 	
@@ -107,7 +107,7 @@ var aero = {
 		aero.initFavIcon(aero.app, "favicon.ico");
 		
 		// Cache duration
-		var staticFilesConfig = {
+		let staticFilesConfig = {
 			maxAge: aero.config.browser.cache.duration
 		};
 		
@@ -170,7 +170,7 @@ var aero = {
 			} else {
 				try {
 					// Load config.json
-					var userConfig = JSON.parse(data);
+					let userConfig = JSON.parse(data);
 					
 					// Merge config file
 					aero.config = merge(aero.config, userConfig);
@@ -252,7 +252,7 @@ var aero = {
 	loadStyle: function(id, filePath) {
 		console.log("Compiling style: " + id);
 		
-		var recompileStyle = function() {
+		let recompileStyle = function() {
 			styles.compileStylusFile(filePath, function(css) {
 				aero.events.emit("cssChanged", id, css);
 			});
@@ -272,7 +272,7 @@ var aero = {
 			pagesPath = aero.config.pagesPath;
 		
 		// Filter directories
-		var pages = aero.config.pages.map(function(file) {
+		let pages = aero.config.pages.map(function(file) {
 			return {
 				name: file,
 				fullPath: path.join(pagesPath, file)
@@ -281,9 +281,9 @@ var aero = {
 		
 		// Find all pages
 		aero.pages = pages.map(function(file) {
-			var pageId = file.name;
-			var jsonFile = path.join(file.fullPath, pageId + ".json");
-			var pageJSON;
+			let pageId = file.name;
+			let jsonFile = path.join(file.fullPath, pageId + ".json");
+			let pageJSON;
 			
 			// JSON
 			try {
@@ -294,7 +294,7 @@ var aero = {
 			}
 			
 			// Create page
-			var page = pageConfig(pageId);
+			let page = pageConfig(pageId);
 			
 			// Merge
 			if(pageJSON != null)
@@ -314,10 +314,10 @@ var aero = {
 		
 		// Set up routing
 		Object.keys(aero.pages).forEach(function(pageId) {
-			var page = aero.pages[pageId];
+			let page = aero.pages[pageId];
 			
 			// Response header
-			var contentType = "text/html; charset=utf-8";
+			let contentType = "text/html; charset=utf-8";
 			
 			// Set up raw response with cached output
 			if(page.static) {
@@ -415,7 +415,7 @@ var aero = {
 	
 	// Compile pages
 	compilePages: function() {
-		var renderLayout = function() {
+		let renderLayout = function() {
 			return "";
 		};
 		
@@ -428,7 +428,7 @@ var aero = {
 		
 		// Compile jade files
 		Object.keys(aero.pages).forEach(function(pageId) {
-			var page = aero.pages[pageId];
+			let page = aero.pages[pageId];
 			
 			page.path = path.join(aero.config.pagesPath, page.id);
 			page.controllerPath = path.resolve(path.join(page.path, page.id + ".js"));
@@ -458,7 +458,7 @@ var aero = {
 			}
 			
 			page.render = function(additionalParams) {
-				var params = {
+				let params = {
 					siteName: aero.config.siteName,
 					pages: aero.pages
 				};
@@ -470,7 +470,7 @@ var aero = {
 			};
 			
 			page.renderWithLayout = function(additionalParams) {
-				var params = {
+				let params = {
 					siteName: aero.config.siteName,
 					pages: aero.pages,
 					css: aero.css.compile(["aero-reset", "aero-fonts"].concat(aero.config.styles)),
@@ -494,15 +494,15 @@ var aero = {
 			};
 			
 			page.compile = function(compileStyle) {
-				var label = "| Compiling page: " + this.id;
+				let label = "| Compiling page: " + this.id;
 				
-				var renderIt = function() {
+				let renderIt = function() {
 					console.time(label);
 					
 					// Style
 					if(compileStyle) {
-						var stylFile = path.join(page.path, page.id + ".styl");
-						var style = null;
+						let stylFile = path.join(page.path, page.id + ".styl");
+						let style = null;
 						
 						try {
 							style = fs.readFileSync(stylFile, "utf8");
@@ -564,10 +564,10 @@ var aero = {
 	
 	// Make pages
 	makePages: function() {
-		var makePages = [];
+		let makePages = [];
 		
 		Object.keys(aero.pages).forEach(function(key) {
-			var page = aero.pages[key];
+			let page = aero.pages[key];
 			
 			makePages.push("aero.makePage(\"" + page.title + "\", \"" + key + "\", \"" + page.url + "\");");
 		});

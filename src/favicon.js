@@ -1,7 +1,7 @@
 "use strict";
 
-var fs = require("fs");
-var colors = require("../config/colors");
+let fs = require("fs");
+let colors = require("../config/colors");
 
 module.exports = function(app, favIconPath) {
 	fs.exists(favIconPath, function(exists) {

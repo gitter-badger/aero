@@ -1,13 +1,13 @@
 "use strict";
 
-var fs = require("fs");
-var nib = require("nib");
-var stylus = require("stylus");
-var colors = require("../config/colors");
+let fs = require("fs");
+let nib = require("nib");
+let stylus = require("stylus");
+let colors = require("../config/colors");
 
-var styles = {
+let styles = {
 	compileStylus: function(style) {
-		var output = "";
+		let output = "";
 		
 		stylus(style)
 			.set("compress", true)
@@ -23,7 +23,7 @@ var styles = {
 	},
 	
 	compileStylusFile: function(filePath, callBack) {
-		var createStylusFile = function(stylusPath, data) {
+		let createStylusFile = function(stylusPath, data) {
 			console.warn(colors.warn("Couldn't find style sheet '" + stylusPath + "', creating empty one"));
 			
 			fs.writeFile(filePath, data);
@@ -44,7 +44,7 @@ var styles = {
 		}
 		
 		// Sync
-		var contents = "";
+		let contents = "";
 		
 		try {
 			contents = fs.readFileSync(filePath, "utf8");
