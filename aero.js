@@ -326,25 +326,22 @@ let aero = {
 					response.end(page.code);
 				});
 			} else {
-				// GET
-				if(typeof page.controller.get !== "undefined") {
-					aero.app.get("/raw/" + page.url, function(request, response) {
+				// Returns a function which handles the request
+				let handleRequest = function(requestType) {
+					return function(request, response) {
 						response.header("Content-Type", contentType);
-						page.controller.get(request, function(data) {
+						page.controller[requestType](request, function(data) {
 							response.end(page.render(data));
 						});
-					});
-				}
+					};
+				};
 				
-				// POST
-				if(typeof page.controller.post !== "undefined") {
-					aero.app.post("/raw/" + page.url, aero.urlEncodedParser, function(request, response) {
-						response.header("Content-Type", contentType);
-						page.controller.post(request, function(data) {
-							response.end(page.render(data));
-						});
-					});
-				}
+				// Handle GET and POST requests if the controller allows it
+				["get", "post"].forEach(function(requestType) {
+					// TODO: Do we really need urlEncodedParser on GET requests?
+					if(typeof page.controller[requestType] !== "undefined")
+						aero.app[requestType]("/raw/" + page.url, aero.urlEncodedParser, handleRequest(requestType));
+				});
 			}
 			
 			// Static or dynamic?
@@ -357,25 +354,22 @@ let aero = {
 			} else {
 				// Dynamic pages render the layout again without having to reload it from the FS
 				
-				// GET
-				if(typeof page.controller.get !== "undefined") {
-					aero.app.get("/" + page.url, function(request, response) {
+				// Returns a function which handles the request
+				let handleRequest = function(requestType) {
+					return function(request, response) {
 						response.header("Content-Type", contentType);
-						page.controller.get(request, function(data) {
+						page.controller[requestType](request, function(data) {
 							response.end(page.renderWithLayout(data));
 						});
-					});
-				}
+					};
+				};
 				
-				// POST
-				if(typeof page.controller.post !== "undefined") {
-					aero.app.post("/" + page.url, aero.urlEncodedParser, function(request, response) {
-						response.header("Content-Type", contentType);
-						page.controller.post(request, function(data) {
-							response.end(page.renderWithLayout(data));
-						});
-					});
-				}
+				// Handle GET and POST requests if the controller allows it
+				["get", "post"].forEach(function(requestType) {
+					// TODO: Do we really need urlEncodedParser on GET requests?
+					if(typeof page.controller[requestType] !== "undefined")
+						aero.app[requestType]("/" + page.url, aero.urlEncodedParser, handleRequest(requestType));
+				});
 			}
 			
 			// Watch directory
