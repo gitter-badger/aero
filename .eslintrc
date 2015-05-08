@@ -3,6 +3,7 @@
 		"node": true
 	},
 	"ecmaFeatures": {
+		"arrowFunctions": true,
 		"blockBindings": true
 	},
 	"rules": {

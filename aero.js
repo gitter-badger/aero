@@ -338,9 +338,10 @@ let aero = {
 				
 				// Handle GET and POST requests if the controller allows it
 				["get", "post"].forEach(function(requestType) {
-					// TODO: Do we really need urlEncodedParser on GET requests?
-					if(typeof page.controller[requestType] !== "undefined")
+					if(requestType !== "get")
 						aero.app[requestType]("/raw/" + page.url, aero.urlEncodedParser, handleRequest(requestType));
+					else
+						aero.app[requestType]("/raw/" + page.url, handleRequest(requestType));
 				});
 			}
 			
@@ -366,9 +367,12 @@ let aero = {
 				
 				// Handle GET and POST requests if the controller allows it
 				["get", "post"].forEach(function(requestType) {
-					// TODO: Do we really need urlEncodedParser on GET requests?
-					if(typeof page.controller[requestType] !== "undefined")
-						aero.app[requestType]("/" + page.url, aero.urlEncodedParser, handleRequest(requestType));
+					if(typeof page.controller[requestType] !== "undefined") {
+						if(requestType !== "get")
+							aero.app[requestType]("/" + page.url, aero.urlEncodedParser, handleRequest(requestType));
+						else
+							aero.app[requestType]("/" + page.url, handleRequest(requestType));
+					}
 				});
 			}
 			
