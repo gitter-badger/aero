@@ -34,7 +34,7 @@ And start it:
 
 That's all you need for your index.js file. Run it using:
 
-	node index.js
+	iojs index.js
 
 ## Hello World
 
@@ -75,7 +75,7 @@ Install Aero:
 
 Now run it using:
 
-	node index.js
+	iojs index.js
 
 This should automatically create the `pages/helloworld/helloworld.jade` file and start your server on port 4000. Navigate your browser to [http://localhost:4000/helloworld](http://localhost:4000/helloworld) to see the "helloworld" from your automatically created page rendered into your layout.
 
