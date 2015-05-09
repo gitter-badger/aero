@@ -1,7 +1,7 @@
 {
 	"name": "aero",
 	"version": "0.2.3",
-	"description": "CMS based on Node, Express, Jade and Stylus.",
+	"description": "CMS based on iojs, Express, Jade and Stylus.",
 	"main": "aero.js",
 	"dependencies": {
 		"aero-server": "*",

@@ -1,5 +1,5 @@
 # Aero
-CMS based on [Node](https://github.com/joyent/node), [Express](https://github.com/strongloop/express), [Jade](https://github.com/jadejs/jade) and [Stylus](https://github.com/LearnBoost/stylus). The goals are:
+CMS based on [iojs](https://iojs.org/), [Express](https://github.com/strongloop/express), [Jade](https://github.com/jadejs/jade) and [Stylus](https://github.com/LearnBoost/stylus). The goals are:
 
 * [Page Speed](https://developers.google.com/speed/pagespeed/insights/) rank of 100/100
 * Low latency (minimize HTTP requests)
