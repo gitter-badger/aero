@@ -91,7 +91,7 @@ You've barely scratched the surface of what Aero can do with the Hello World exa
 
 ## Websites using Aero
 
-* [http://blitzprog.org/](http://blitzprog.org/) ([Source](https://github.com/blitzprog/blitzprog.org))
+* [blitzprog.org](http://blitzprog.org/) ([Source](https://github.com/blitzprog/blitzprog.org))
 
 ## Status
 
