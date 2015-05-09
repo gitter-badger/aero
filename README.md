@@ -26,7 +26,7 @@ You can install aero via npm:
 
 Now you can load the module:
 
-	var aero = require("aero");
+	let aero = require("aero");
 
 And start it:
 
@@ -40,7 +40,7 @@ That's all you need for your index.js file. Run it using:
 
 Create your main file `index.js` if it doesn't exist yet:
 
-	var aero = require("aero");
+	let aero = require("aero");
 	aero.start();
 	
 You can also specify a config file path by passing it to `aero.start(configFile)` which defaults to `config.json`.
@@ -91,7 +91,7 @@ You've barely scratched the surface of what Aero can do with the Hello World exa
 
 ## Websites using Aero
 
-* http://blitzprog.org/ ([Source](https://github.com/blitzprog/blitzprog.org))
+* [http://blitzprog.org/](http://blitzprog.org/) ([Source](https://github.com/blitzprog/blitzprog.org))
 
 ## Status
 
