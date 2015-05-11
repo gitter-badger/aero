@@ -55,6 +55,9 @@ let aero = {
 	// Includes all page objects
 	pages: {},
 	
+	// Layout controller
+	layoutController: null,
+	
 	// Start
 	start: function(configFile) {
 		// When config has been loaded
@@ -359,8 +362,23 @@ let aero = {
 				let handleRequest = function(requestType) {
 					return function(request, response) {
 						response.header("Content-Type", contentType);
-						page.controller[requestType](request, function(data) {
-							response.end(page.renderWithLayout(data));
+						page.controller[requestType](request, function(pageParams) {
+							if(aero.layoutController !== null) {
+								aero.layoutController.get(request, function(layoutParams) {
+									if(typeof pageParams !== "undefined") {
+										if(typeof layoutParams !== "undefined") {
+											pageParams = merge(pageParams, layoutParams);
+										}
+									} else {
+										pageParams = layoutParams;
+									}
+									
+									pageParams = merge(pageParams, layoutParams);
+									response.end(page.renderWithLayout(pageParams));
+								});
+							} else {
+								response.end(page.renderWithLayout(pageParams));
+							}
 						});
 					};
 				};
@@ -411,8 +429,20 @@ let aero = {
 		return true;
 	},
 	
+	reloadLayoutController: function() {
+		console.log("Loading layout controller");
+		
+		// Delete cached module
+		let controllerPath = path.resolve(path.join(aero.config.layoutPath, path.basename(aero.config.layoutPath) + ".js"));
+		delete require.cache[controllerPath];
+		
+		// Reload it
+		aero.layoutController = require(controllerPath);
+	},
+	
 	// Compile pages
 	compilePages: function() {
+		// Layout
 		let renderLayout = function() {
 			return "";
 		};
@@ -422,6 +452,15 @@ let aero = {
 		} catch(e) {
 			if(e.code === "ENOENT")
 				console.error(colors.error("You should add a layout " + aero.config.layoutPath + " !"));
+		}
+		
+		try {
+			aero.reloadLayoutController();
+		} catch(e) {
+			if(!(e instanceof Error) || e.code !== "MODULE_NOT_FOUND")
+				throw e;
+			
+			console.log("Looks like your page is not using a layout controller");
 		}
 		
 		// Compile jade files
