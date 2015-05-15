@@ -373,7 +373,6 @@ let aero = {
 										pageParams = layoutParams;
 									}
 									
-									pageParams = merge(pageParams, layoutParams);
 									response.end(page.renderWithLayout(pageParams));
 								});
 							} else {
@@ -507,10 +506,17 @@ let aero = {
 			};
 			
 			page.renderWithLayout = function(additionalParams) {
+				let allStyles = null;
+				
+				if(aero.config.fonts.length > 0)
+					allStyles = ["aero-fonts"].concat(aero.config.styles);
+				else
+					allStyles = aero.config.styles;
+				
 				let params = {
 					siteName: aero.config.siteName,
 					pages: aero.pages,
-					css: aero.css.compile(["aero-reset", "aero-fonts"].concat(aero.config.styles)),
+					css: aero.css.compile(allStyles), //aero.css.compile(["aero-reset", "aero-fonts"].concat(aero.config.styles)),
 					js: aero.js.compile(["jquery", "aero-helpers", "aero-main", "aero-init", "google-analytics", "aero-pages-js", "aero-setup-js"].concat(aero.config.scripts))
 				};
 				

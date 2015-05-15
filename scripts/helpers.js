@@ -5,7 +5,7 @@ String.prototype.replaceAll = function(find, replace) {
 };
 
 // startsWith
-String.prototype.startsWith = function(str){
+String.prototype.startsWith = function(str) {
 	return this.indexOf(str) === 0;
 };
 
@@ -13,10 +13,10 @@ String.prototype.startsWith = function(str){
 jQuery.fn.prevOrLast = function(selector) {
 	var prev = this.prev(selector);
 	return (prev.length) ? prev : this.nextAll(selector).last();
-}
+};
 
 // nextOrFirst
 jQuery.fn.nextOrFirst = function(selector) {
 	var next = this.next(selector);
 	return (next.length) ? next : this.prevAll(selector).last();
-}
+};
